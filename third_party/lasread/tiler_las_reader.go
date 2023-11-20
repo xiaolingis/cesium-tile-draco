@@ -7,12 +7,13 @@ package lidario
 
 import (
 	"encoding/binary"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"io"
 	"os"
 	"runtime"
 	"sync"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 )
 
 var recLengths = [11][4]int{
@@ -44,17 +45,17 @@ var xyzOffets = [11][3]int{
 }
 
 var rgbOffets = [11][]int{
-	nil, 			// Point format 0
-	nil, 			// Point format 1
-	{20, 22, 24}, 	// Point format 2
-	{28, 30, 32}, 	// Point format 3
-	nil, 			// Point format 4
-	{28, 30, 32}, 	// Point format 5
-	nil, 			// Point format 6
-	{30, 32, 34}, 	// Point format 7
-	{30, 32, 34}, 	// Point format 8
-	nil, 			// Point format 9
-	{30, 32, 34}, 	// Point format 10
+	nil,          // Point format 0
+	nil,          // Point format 1
+	{20, 22, 24}, // Point format 2
+	{28, 30, 32}, // Point format 3
+	nil,          // Point format 4
+	{28, 30, 32}, // Point format 5
+	nil,          // Point format 6
+	{30, 32, 34}, // Point format 7
+	{30, 32, 34}, // Point format 8
+	nil,          // Point format 9
+	{30, 32, 34}, // Point format 10
 }
 
 // intensity offset is always 12
@@ -62,14 +63,14 @@ var rgbOffets = [11][]int{
 var classificationOffets = [11]int{
 	15, // Point format 0
 	15, // Point format 1
-	15,	// Point format 2
+	15, // Point format 2
 	15, // Point format 3
 	15, // Point format 4
 	15, // Point format 5
 	16, // Point format 6
 	16, // Point format 7
 	16, // Point format 8
-	16,	// Point format 9
+	16, // Point format 9
 	16, // Point format 10
 }
 
@@ -108,7 +109,6 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 		return err
 	}
 	if las.fileMode != "rh" {
-
 
 		if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][0] {
 			las.usePointIntensity = true
@@ -151,7 +151,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 		// return err
 	}
 
-    // The LAS Specifications state that:
+	// The LAS Specifications state that:
 	// " Point data items that are not ‘Required’ must be set to
 	// the equivalent of zero for the data type (e.g. 0.0 for floating types, null for ASCII, 0 for integers)."
 	//
@@ -179,7 +179,10 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 			for i := pointSt; i <= pointEnd; i++ {
 				offset = i * las.Header.PointRecordLength
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
-				lasFileLoader.Tree.AddPoint(&geometry.Coordinate{X: X, Y: Y, Z: Z}, R, G, B, Intensity, Classification, inSrid)
+				lasFileLoader.Tree.AddPoint(
+					&geometry.Coordinate{X: X, Y: Y, Z: Z},
+					R, G, B,
+					Intensity, Classification, inSrid)
 				// las.pointDataOctElement[i] = elem
 			}
 		}(startingPoint, endingPoint)
@@ -189,8 +192,9 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	return nil
 }
 
-
-func readPoint(header *LasHeader, data []byte, offset int, eightBitColor bool) (float64, float64, float64, uint8, uint8, uint8, uint8, uint8) {
+func readPoint(header *LasHeader, data []byte, offset int, eightBitColor bool) (
+	float64, float64, float64, uint8, uint8, uint8, uint8, uint8,
+) {
 	var x, y, z float64
 	var r, g, b uint8
 	var intensity uint8
@@ -222,5 +226,5 @@ func readPoint(header *LasHeader, data []byte, offset int, eightBitColor bool) (
 	classificationOffset := classificationOffets[header.PointFormatID] + offset
 	classification = data[classificationOffset]
 
-	return x,y,z,r,g,b,intensity,classification
+	return x, y, z, r, g, b, intensity, classification
 }

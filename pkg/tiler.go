@@ -3,17 +3,18 @@ package pkg
 import (
 	"errors"
 	"fmt"
-	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
-	"github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
 	"log"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/io"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
+	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
+	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
 
 type ITiler interface {

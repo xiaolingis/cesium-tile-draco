@@ -8,7 +8,7 @@ type Flags struct {
 	Input                     *string
 	Output                    *string
 	Srid                      *int
-	EightBitColors  		   *bool
+	EightBitColors            *bool
 	ZOffset                   *float64
 	MaxNumPts                 *int
 	ZGeoidCorrection          *bool

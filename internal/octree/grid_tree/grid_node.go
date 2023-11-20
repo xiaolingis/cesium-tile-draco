@@ -2,13 +2,14 @@ package grid_tree
 
 import "C"
 import (
+	"math"
+	"sync"
+	"sync/atomic"
+
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"math"
-	"sync"
-	"sync/atomic"
 )
 
 // Models a node of the octree, which can either be a leaf (a node without children nodes) or not.
@@ -32,9 +33,15 @@ type GridNode struct {
 }
 
 // Instantiates a new GridNode
-func NewGridNode(parent octree.INode, boundingBox *geometry.BoundingBox, maxCellSize float64, minCellSize float64, root bool) octree.INode {
+func NewGridNode(
+	parent octree.INode,
+	boundingBox *geometry.BoundingBox,
+	maxCellSize float64,
+	minCellSize float64,
+	root bool,
+) octree.INode {
 	node := GridNode{
-		parent:              parent,						   // the parent node
+		parent:              parent,                           // the parent node
 		root:                root,                             // if the node is the tree root
 		boundingBox:         boundingBox,                      // bounding box of the node
 		cellSize:            maxCellSize,                      // max size setting to use for gridCells
@@ -125,7 +132,7 @@ func (n *GridNode) ComputeGeometricError() float64 {
 		var w = math.Abs(n.boundingBox.Xmax - n.boundingBox.Xmin)
 		var l = math.Abs(n.boundingBox.Ymax - n.boundingBox.Ymin)
 		var h = math.Abs(n.boundingBox.Zmax - n.boundingBox.Zmin)
-		return math.Sqrt(w * w + l * l + h * h)
+		return math.Sqrt(w*w + l*l + h*h)
 	}
 	// geometric error is estimated as the maximum possible distance between two points lying in the cell
 	return n.cellSize * math.Sqrt(3) * 2
@@ -236,7 +243,12 @@ func (n *GridNode) initializeChildren() {
 	n.Lock()
 	for i := uint8(0); i < 8; i++ {
 		if n.children[i] == nil {
-			n.children[i] = NewGridNode(n, getOctantBoundingBox(&i, n.boundingBox), n.cellSize/2.0, n.minCellSize, false)
+			n.children[i] = NewGridNode(
+				n,
+				getOctantBoundingBox(&i, n.boundingBox),
+				n.cellSize/2.0,
+				n.minCellSize,
+				false)
 		}
 	}
 	n.initialized = true

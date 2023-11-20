@@ -2,14 +2,15 @@ package grid_tree
 
 import (
 	"errors"
+	"log"
+	"runtime"
+	"sync"
+
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
-	"log"
-	"runtime"
-	"sync"
 )
 
 // Coordinates are stored in EPSG 3395, which is a cartesian 2D metric reference system
@@ -29,7 +30,12 @@ type GridTree struct {
 }
 
 // Builds an empty GridTree initializing its properties to the correct defaults
-func NewGridTree(coordinateConverter converters.CoordinateConverter, elevationCorrector converters.ElevationCorrector, maxCellSize float64, minCellSize float64) octree.ITree {
+func NewGridTree(
+	coordinateConverter converters.CoordinateConverter,
+	elevationCorrector converters.ElevationCorrector,
+	maxCellSize float64,
+	minCellSize float64,
+) octree.ITree {
 	return &GridTree{
 		built:               false,
 		maxCellSize:         maxCellSize,
@@ -40,7 +46,7 @@ func NewGridTree(coordinateConverter converters.CoordinateConverter, elevationCo
 	}
 }
 
-// Builds the hierarchical tree structure 
+// Builds the hierarchical tree structure
 func (tree *GridTree) Build() error {
 	if tree.built {
 		return errors.New("octree already built")
@@ -66,11 +72,19 @@ func (tree *GridTree) IsBuilt() bool {
 	return tree.built
 }
 
-func (tree *GridTree) AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int) {
+func (tree *GridTree) AddPoint(
+	coordinate *geometry.Coordinate,
+	r uint8, g uint8, b uint8,
+	intensity uint8, classification uint8, srid int,
+) {
 	tree.Loader.AddPoint(tree.getPointFromRawData(coordinate, r, g, b, intensity, classification, srid))
 }
 
-func (tree *GridTree) getPointFromRawData(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int) *data.Point {
+func (tree *GridTree) getPointFromRawData(
+	coordinate *geometry.Coordinate,
+	r uint8, g uint8, b uint8,
+	intensity uint8, classification uint8, srid int,
+) *data.Point {
 	wgs84coords, err := tree.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
 	z := tree.elevationCorrector.CorrectElevation(wgs84coords.X, wgs84coords.Y, wgs84coords.Z)
 
@@ -88,14 +102,23 @@ func (tree *GridTree) getPointFromRawData(coordinate *geometry.Coordinate, r uin
 		log.Fatal(err)
 	}
 
-	return data.NewPoint(worldMercatorCoords.X, worldMercatorCoords.Y, worldMercatorCoords.Z, r, g, b, intensity, classification)
+	return data.NewPoint(
+		worldMercatorCoords.X,
+		worldMercatorCoords.Y,
+		worldMercatorCoords.Z,
+		r, g, b, intensity, classification)
 }
-
-
 
 func (tree *GridTree) init() {
 	box := tree.GetBounds()
-	node := NewGridNode(nil, geometry.NewBoundingBox(box[0], box[1], box[2], box[3], box[4], box[5]), tree.maxCellSize, tree.minCellSize, true)
+
+	node := NewGridNode(
+		nil,
+		geometry.NewBoundingBox(box[0], box[1], box[2], box[3], box[4], box[5]),
+		tree.maxCellSize,
+		tree.minCellSize,
+		true)
+
 	tree.rootNode = node
 	tree.InitializeLoader()
 }
