@@ -184,6 +184,9 @@ func (n *GridNode) getPointGridCell(point *data.Point) *gridCell {
 	n.RUnlock()
 
 	if cell == nil {
+		// if n.root {
+		// 	log.Println("grid-cell-index. x:", index.x, ",y:", index.y, ",z:", index.z)
+		// }
 		return n.initializeGridCell(&index)
 	}
 

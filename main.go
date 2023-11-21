@@ -53,6 +53,9 @@ func main() {
 	// remove comment to enable the profiler (remember to remove comment in the imports)
 	// defer profile.Start(profile.MemProfileRate(1)).Stop()
 
+	log.SetPrefix("[alpaca] ")
+	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
+
 	// Retrieve command line args
 	flags := tools.ParseFlags()
 

@@ -11,6 +11,7 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
+	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
 
 // Coordinates are stored in EPSG 3395, which is a cartesian 2D metric reference system
@@ -111,6 +112,10 @@ func (tree *GridTree) getPointFromRawData(
 
 func (tree *GridTree) init() {
 	box := tree.GetBounds()
+
+	// box  {eb.minX, eb.maxX, eb.minY, eb.maxY, eb.minZ, eb.maxZ}
+	log.Println("tree.box(minX,maxX,minY,maxY,minZ,maxZ):" + tools.FmtJSONString(box))
+	log.Println("x:", box[1]-box[0], ", y:", box[3]-box[2], ", z:", box[5]-box[4])
 
 	node := NewGridNode(
 		nil,
