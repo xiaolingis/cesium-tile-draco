@@ -2,7 +2,13 @@ package tools
 
 import (
 	"flag"
+	"log"
 )
+
+type FlagsGlobal struct {
+	Help    *bool `json:"help"`
+	Version *bool `json:"version"`
+}
 
 type Flags struct {
 	Input                     *string
@@ -24,26 +30,49 @@ type Flags struct {
 	Version                   *bool
 }
 
-func ParseFlags() Flags {
-	input := defineStringFlag("input", "i", "", "Specifies the input las file/folder.")
-	output := defineStringFlag("output", "o", "", "Specifies the output folder where to write the tileset data.")
-	srid := defineIntFlag("srid", "e", 4326, "EPSG srid code of input points.")
-	eightBit := defineBoolFlag("8bit", "b", false, "Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)")
-	zOffset := defineFloat64Flag("zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
-	maxNumPts := defineIntFlag("maxpts", "m", 50000, "Max number of points per tile for the Random and RandomBox algorithms.")
-	zGeoidCorrection := defineBoolFlag("geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
-	folderProcessing := defineBoolFlag("folder", "f", false, "Enables processing of all las files from input folder. Input must be a folder if specified")
-	recursiveFolderProcessing := defineBoolFlag("recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
-	silent := defineBoolFlag("silent", "s", false, "Use to suppress all the non-error messages.")
-	logTimestamp := defineBoolFlag("timestamp", "t", false, "Adds timestamp to log messages.")
-	algorithm := defineStringFlag("algorithm", "a", "grid", "Sets the algorithm to use. Must be one of Grid,Random,RandomBox. Grid algorithm is highly suggested, others are deprecated and will be removed in future versions.")
-	gridCellMaxSize := defineFloat64Flag("grid-max-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
-	gridCellMinSize := defineFloat64Flag("grid-min-size", "n", 0.15, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
-	refineMode := defineStringFlag("refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+type FlagsForCommandMerge struct {
+	Input        *string  `json:"input"`
+	Srid         *int     `json:"srid"`
+	GridCellSize *float64 `json:"grid_cell_size"`
+	RefineMode   *string  `json:"refine_mode"`
+}
+
+func ParseFlagsGlobal() FlagsGlobal {
 	help := defineBoolFlag("help", "h", false, "Displays this help.")
 	version := defineBoolFlag("version", "v", false, "Displays the version of gocesiumtiler.")
 
 	flag.Parse()
+
+	return FlagsGlobal{
+		Help:    help,
+		Version: version,
+	}
+}
+
+func ParseFlags(args []string) Flags {
+	log.Println(FmtJSONString(args))
+
+	flagCommand := flag.NewFlagSet("command-index", flag.ExitOnError)
+
+	input := defineStringFlagCommand(flagCommand, "input", "i", "", "Specifies the input las file/folder.")
+	output := defineStringFlagCommand(flagCommand, "output", "o", "", "Specifies the output folder where to write the tileset data.")
+	srid := defineIntFlagCommand(flagCommand, "srid", "e", 4326, "EPSG srid code of input points.")
+	eightBit := defineBoolFlagCommand(flagCommand, "8bit", "b", false, "Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)")
+	zOffset := defineFloat64FlagCommand(flagCommand, "zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
+	maxNumPts := defineIntFlagCommand(flagCommand, "maxpts", "m", 50000, "Max number of points per tile for the Random and RandomBox algorithms.")
+	zGeoidCorrection := defineBoolFlagCommand(flagCommand, "geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
+	folderProcessing := defineBoolFlagCommand(flagCommand, "folder", "f", false, "Enables processing of all las files from input folder. Input must be a folder if specified")
+	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
+	silent := defineBoolFlagCommand(flagCommand, "silent", "s", false, "Use to suppress all the non-error messages.")
+	logTimestamp := defineBoolFlagCommand(flagCommand, "timestamp", "t", false, "Adds timestamp to log messages.")
+	algorithm := defineStringFlagCommand(flagCommand, "algorithm", "a", "grid", "Sets the algorithm to use. Must be one of Grid,Random,RandomBox. Grid algorithm is highly suggested, others are deprecated and will be removed in future versions.")
+	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
+	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 0.15, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
+	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of gocesiumtiler.")
+
+	flagCommand.Parse(args)
 
 	return Flags{
 		Input:                     input,
@@ -63,6 +92,26 @@ func ParseFlags() Flags {
 		RefineMode:                refineMode,
 		Help:                      help,
 		Version:                   version,
+	}
+}
+
+func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
+	log.Println(FmtJSONString(args))
+
+	flagCommand := flag.NewFlagSet("command-merge", flag.ExitOnError)
+
+	input := defineStringFlagCommand(flagCommand, "input", "i", "", "Specifies the input las file/folder.")
+	srid := defineIntFlagCommand(flagCommand, "srid", "e", 4326, "EPSG srid code of input points.")
+	gridSize := defineFloat64FlagCommand(flagCommand, "grid-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
+	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+
+	flagCommand.Parse(args)
+
+	return FlagsForCommandMerge{
+		Input:        input,
+		Srid:         srid,
+		GridCellSize: gridSize,
+		RefineMode:   refineMode,
 	}
 }
 
@@ -100,6 +149,44 @@ func defineBoolFlag(name string, shortHand string, defaultValue bool, usage stri
 	flag.BoolVar(&output, name, defaultValue, usage)
 	if shortHand != name {
 		flag.BoolVar(&output, shortHand, defaultValue, usage+" (shorthand for "+name+")")
+	}
+	return &output
+}
+
+func defineStringFlagCommand(flagCommand *flag.FlagSet, name string, shortHand string, defaultValue string, usage string) *string {
+	var output string
+	flagCommand.StringVar(&output, name, defaultValue, usage)
+	if shortHand != name && shortHand != "" {
+		flagCommand.StringVar(&output, shortHand, defaultValue, usage+" (shorthand for "+name+")")
+	}
+
+	return &output
+}
+
+func defineIntFlagCommand(flagCommand *flag.FlagSet, name string, shortHand string, defaultValue int, usage string) *int {
+	var output int
+	flagCommand.IntVar(&output, name, defaultValue, usage)
+	if shortHand != name {
+		flagCommand.IntVar(&output, shortHand, defaultValue, usage+" (shorthand for "+name+")")
+	}
+
+	return &output
+}
+
+func defineFloat64FlagCommand(flagCommand *flag.FlagSet, name string, shortHand string, defaultValue float64, usage string) *float64 {
+	var output float64
+	flagCommand.Float64Var(&output, name, defaultValue, usage)
+	if shortHand != name {
+		flagCommand.Float64Var(&output, shortHand, defaultValue, usage+" (shorthand for "+name+")")
+	}
+	return &output
+}
+
+func defineBoolFlagCommand(flagCommand *flag.FlagSet, name string, shortHand string, defaultValue bool, usage string) *bool {
+	var output bool
+	flagCommand.BoolVar(&output, name, defaultValue, usage)
+	if shortHand != name {
+		flagCommand.BoolVar(&output, shortHand, defaultValue, usage+" (shorthand for "+name+")")
 	}
 	return &output
 }

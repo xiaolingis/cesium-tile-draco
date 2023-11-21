@@ -50,14 +50,43 @@ const logo = `
 `
 
 func main() {
-	// remove comment to enable the profiler (remember to remove comment in the imports)
-	// defer profile.Start(profile.MemProfileRate(1)).Stop()
-
 	log.SetPrefix("[alpaca] ")
 	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
 
+	flagsGlobal := tools.ParseFlagsGlobal()
+	log.Println(tools.FmtJSONString(flagsGlobal))
+
+	args := flag.Args()
+	if len(args) == 0 {
+		log.Fatal("Please specify a subcommand [index|merge].")
+	}
+	cmd, args := args[0], args[1:]
+
+	switch cmd {
+	case "index":
+		mainCommandIndex(args)
+	case "merge":
+		mainCommandMerge(args)
+	default:
+		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
+	}
+
+	return
+}
+
+func mainCommandMerge(args []string) {
+	flags := tools.ParseFlagsForCommandMerge(args)
+
+	log.Println("flags", tools.FmtJSONString(flags))
+
+}
+
+func mainCommandIndex(args []string) {
+	// remove comment to enable the profiler (remember to remove comment in the imports)
+	// defer profile.Start(profile.MemProfileRate(1)).Stop()
+
 	// Retrieve command line args
-	flags := tools.ParseFlags()
+	flags := tools.ParseFlags(args)
 
 	// Prints the command line flag description
 	if *flags.Help {
