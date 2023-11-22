@@ -11,7 +11,7 @@ type ITree interface {
 	GetRootNode() INode
 	IsBuilt() bool
 	// Adds a Point to the Tree
-	AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int)
+	AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int, pointExtend *data.PointExtend)
 }
 
 type INode interface {

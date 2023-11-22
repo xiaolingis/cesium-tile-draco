@@ -8,10 +8,12 @@ package lidario
 import (
 	"encoding/binary"
 	"io"
+	"log"
 	"os"
 	"runtime"
 	"sync"
 
+	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 )
@@ -75,12 +77,14 @@ var classificationOffets = [11]int{
 }
 
 type LasFileLoader struct {
-	Tree octree.ITree
+	LasFile *LasFile
+	Tree    octree.ITree
 }
 
 func NewLasFileLoader(tree octree.ITree) *LasFileLoader {
 	return &LasFileLoader{
-		Tree: tree,
+		LasFile: nil,
+		Tree:    tree,
 	}
 }
 
@@ -93,11 +97,14 @@ func (lasFileLoader *LasFileLoader) LoadLasFile(fileName string, inSrid int, eig
 	if err := lasFileLoader.readForOctree(inSrid, eightBitColor, &las); err != nil {
 		return &las, err
 	}
+
 	return &las, nil
 }
 
 // Reads the las file and produces a LasFile struct instance loading points data into its inner list of Point
 func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool, las *LasFile) error {
+	log.Println("las_file path:", las.fileName)
+
 	var err error
 	if las.f, err = os.Open(las.fileName); err != nil {
 		return err
@@ -108,6 +115,11 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 	if err := las.readVLRs(); err != nil {
 		return err
 	}
+
+	lasFileLoader.LasFile = las
+	log.Printf("las_file [%s] open success. num_of_points:%d", las.fileName, las.Header.NumberPoints)
+	log.Println("las_file header", las.Header.String())
+
 	if las.fileMode != "rh" {
 
 		if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][0] {
@@ -122,6 +134,10 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 		} else if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][3] {
 			las.usePointIntensity = false
 			las.usePointUserdata = false
+		}
+
+		if err := las.readPoints(); err != nil {
+			return err
 		}
 
 		if err := lasFileLoader.readPointsOctElem(inSrid, eightBitColor, las); err != nil {
@@ -179,10 +195,15 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 			for i := pointSt; i <= pointEnd; i++ {
 				offset = i * las.Header.PointRecordLength
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
+				pointExtend := &data.PointExtend{
+					LasPointIndex: i,
+				}
 				lasFileLoader.Tree.AddPoint(
 					&geometry.Coordinate{X: X, Y: Y, Z: Z},
 					R, G, B,
-					Intensity, Classification, inSrid)
+					Intensity, Classification, inSrid,
+					pointExtend,
+				)
 				// las.pointDataOctElement[i] = elem
 			}
 		}(startingPoint, endingPoint)

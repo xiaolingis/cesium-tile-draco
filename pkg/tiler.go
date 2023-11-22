@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -54,21 +55,30 @@ func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
 
 func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tree octree.ITree) {
 	// Create empty octree
-	tiler.readLasData(filePath, opts, tree)
+	lasFileLoader, err := tiler.readLasData(filePath, opts, tree)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = lasFileLoader.LasFile.Close() }()
+
 	tiler.prepareDataStructure(tree)
 	tiler.exportToCesiumTileset(tree, opts, getFilenameWithoutExtension(filePath))
+
+	tiler.exportRootNodeLas(tree, opts, filePath, lasFileLoader.LasFile)
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 }
 
-func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree octree.ITree) {
+func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
-	err := readLas(filePath, opts, tree)
-
+	lasFileLoader, err := readLas(filePath, opts, tree)
 	if err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
+
+	return lasFileLoader, nil
 }
 
 func (tiler *Tiler) prepareDataStructure(octree octree.ITree) {
@@ -96,16 +106,15 @@ func getFilenameWithoutExtension(filePath string) string {
 }
 
 // Reads the given las file and preloads data in a list of Point
-func readLas(file string, opts *tiler.TilerOptions, tree octree.ITree) error {
-	var lf *lidario.LasFile
-	var err error
+func readLas(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lidario.LasFileLoader, error) {
 	var lasFileLoader = lidario.NewLasFileLoader(tree)
-	lf, err = lasFileLoader.LoadLasFile(file, opts.Srid, opts.EightBitColors)
+	_, err := lasFileLoader.LoadLasFile(filePath, opts.Srid, opts.EightBitColors)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer func() { _ = lf.Close() }()
-	return nil
+	// defer func() { _ = lf.Close() }()
+
+	return lasFileLoader, nil
 }
 
 // Exports the data cloud represented by the given built octree into 3D tiles data structure according to the options
@@ -155,6 +164,64 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 	if withErrors {
 		return errors.New("errors raised during execution. Check console output for details")
 	}
+
+	return nil
+}
+
+func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOptions, filePath string, lasFile *lidario.LasFile) error {
+	fileName := getFilenameWithoutExtension(filePath)
+	subFolder := fileName
+	parentFolder := path.Join(opts.Output, subFolder)
+
+	var err error
+
+	// var lf *lidario.LasFile
+	// lf, err = lidario.NewLasFile(filePath, "r")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	log.Fatal(err)
+	// }
+	// defer lf.Close()
+
+	newFileName := path.Join(parentFolder, "content.las")
+	newLf, err := lidario.InitializeUsingFile(newFileName, lasFile)
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+	}
+
+	progress := 0
+	oldProgress := -1
+
+	rootNode := octree.GetRootNode()
+	numberOfPoints := rootNode.NumberOfPoints()
+	points := rootNode.GetPoints()
+
+	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints())
+
+	for i := 0; i < int(numberOfPoints); i++ {
+		point := points[i]
+
+		pointLas, err := lasFile.LasPoint(point.PointExtend.LasPointIndex)
+		if err != nil {
+			log.Println(err)
+			log.Fatal(err)
+			return err
+		}
+
+		newLf.AddLasPoint(pointLas)
+
+		// print export-progress
+		progress = int(100.0 * float64(i) / float64(numberOfPoints))
+		if progress != oldProgress {
+			oldProgress = progress
+			if progress%10 == 0 {
+				fmt.Printf("export root_node rogress: %v\n", progress)
+			}
+		}
+	}
+
+	newLf.Close()
 
 	return nil
 }

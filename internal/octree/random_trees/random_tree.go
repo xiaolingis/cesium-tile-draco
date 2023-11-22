@@ -2,15 +2,16 @@ package random_trees
 
 import (
 	"errors"
+	"log"
+	"runtime"
+	"sync"
+
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"log"
-	"runtime"
-	"sync"
 )
 
 // Represents an RandomTree of points and contains all information needed
@@ -100,15 +101,15 @@ func (t *RandomTree) IsBuilt() bool {
 	return t.built
 }
 
-func (t *RandomTree) AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int) {
-	t.Loader.AddPoint(t.getPointFromRawData(coordinate, r, g, b, intensity, classification, srid))
+func (t *RandomTree) AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int, pointExtend *data.PointExtend) {
+	t.Loader.AddPoint(t.getPointFromRawData(coordinate, r, g, b, intensity, classification, srid, pointExtend))
 }
 
-func (t *RandomTree) getPointFromRawData(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int) *data.Point {
+func (t *RandomTree) getPointFromRawData(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int, pointExtend *data.PointExtend) *data.Point {
 	tr, err := t.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return data.NewPoint(tr.X, tr.Y, t.elevationCorrector.CorrectElevation(tr.X, tr.Y, tr.Z), r, g, b, intensity, classification)
+	return data.NewPoint(tr.X, tr.Y, t.elevationCorrector.CorrectElevation(tr.X, tr.Y, tr.Z), r, g, b, intensity, classification, pointExtend)
 }

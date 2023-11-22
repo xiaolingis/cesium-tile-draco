@@ -11,10 +11,17 @@ type Point struct {
 	B              uint8
 	Intensity      uint8
 	Classification uint8
+
+	// extend in las_file
+	PointExtend *PointExtend
+}
+
+type PointExtend struct {
+	LasPointIndex int
 }
 
 // Builds a new Point from the given coordinates, colors, intensity and classification values
-func NewPoint(X, Y, Z float64, R, G, B, Intensity, Classification uint8) *Point {
+func NewPoint(X, Y, Z float64, R, G, B, Intensity, Classification uint8, pointExtend *PointExtend) *Point {
 	return &Point{
 		X:              X,
 		Y:              Y,
@@ -24,5 +31,6 @@ func NewPoint(X, Y, Z float64, R, G, B, Intensity, Classification uint8) *Point 
 		B:              B,
 		Intensity:      Intensity,
 		Classification: Classification,
+		PointExtend:    pointExtend,
 	}
 }
