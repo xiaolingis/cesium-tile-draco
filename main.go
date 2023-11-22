@@ -74,19 +74,12 @@ func main() {
 	return
 }
 
-func mainCommandMerge(args []string) {
-	flags := tools.ParseFlagsForCommandMerge(args)
-
-	log.Println("flags", tools.FmtJSONString(flags))
-
-}
-
 func mainCommandIndex(args []string) {
 	// remove comment to enable the profiler (remember to remove comment in the imports)
 	// defer profile.Start(profile.MemProfileRate(1)).Stop()
 
 	// Retrieve command line args
-	flags := tools.ParseFlags(args)
+	flags := tools.ParseFlagsForCommandIndex(args)
 
 	// Prints the command line flag description
 	if *flags.Help {
@@ -109,26 +102,29 @@ func mainCommandIndex(args []string) {
 		tools.DisableLoggerTimestamp()
 	}
 
+	tilerFlags := flags.TilerFlags
+
 	// Put args inside a TilerOptions struct
 	opts := tiler.TilerOptions{
-		Input:                  *flags.Input,
-		Output:                 *flags.Output,
-		Srid:                   *flags.Srid,
-		EightBitColors:         *flags.EightBitColors,
-		ZOffset:                *flags.ZOffset,
-		MaxNumPointsPerNode:    int32(*flags.MaxNumPts),
-		EnableGeoidZCorrection: *flags.ZGeoidCorrection,
-		FolderProcessing:       *flags.FolderProcessing,
-		Recursive:              *flags.RecursiveFolderProcessing,
-		Silent:                 *flags.Silent,
-		Algorithm:              tiler.Algorithm(strings.ToUpper(*flags.Algorithm)),
-		CellMinSize:            *flags.GridCellMinSize,
-		CellMaxSize:            *flags.GridCellMaxSize,
-		RefineMode:             tiler.ParseRefineMode(*flags.RefineMode),
+		Input:                  *tilerFlags.Input,
+		Srid:                   *tilerFlags.Srid,
+		EightBitColors:         *tilerFlags.EightBitColors,
+		ZOffset:                *tilerFlags.ZOffset,
+		MaxNumPointsPerNode:    int32(*tilerFlags.MaxNumPts),
+		EnableGeoidZCorrection: *tilerFlags.ZGeoidCorrection,
+		FolderProcessing:       *tilerFlags.FolderProcessing,
+		Recursive:              *tilerFlags.RecursiveFolderProcessing,
+		Algorithm:              tiler.Algorithm(strings.ToUpper(*tilerFlags.Algorithm)),
+		CellMinSize:            *tilerFlags.GridCellMinSize,
+		CellMaxSize:            *tilerFlags.GridCellMaxSize,
+		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+		TilerIndexOptions: &tiler.TilerIndexOptions{
+			Output: *flags.Output,
+		},
 	}
 
 	// Validate TilerOptions
-	if msg, res := validateOptions(&opts); !res {
+	if msg, res := validateOptionsForCommandIndex(&opts, &flags); !res {
 		log.Fatal("Error parsing input parameters: " + msg)
 	}
 
@@ -145,16 +141,71 @@ func mainCommandIndex(args []string) {
 
 // Validates the input options provided to the command line tool checking
 // that input and output folders/files exist
-func validateOptions(opts *tiler.TilerOptions) (string, bool) {
+func validateOptionsForCommandIndex(opts *tiler.TilerOptions, flags *tools.FlagsForCommandIndex) (string, bool) {
 	if _, err := os.Stat(opts.Input); os.IsNotExist(err) {
 		return "Input file/folder not found", false
 	}
-	if _, err := os.Stat(opts.Output); os.IsNotExist(err) {
+	if _, err := os.Stat(*flags.Output); os.IsNotExist(err) {
 		return "Output folder not found", false
 	}
 
 	if opts.CellMinSize > opts.CellMaxSize {
 		return "grid-max-size parameter cannot be lower than grid-min-size parameter", false
+	}
+
+	if opts.RefineMode == "" {
+		return "refine-mode should be either ADD or REPLACE", false
+	}
+
+	return "", true
+}
+
+func mainCommandMerge(args []string) {
+	flags := tools.ParseFlagsForCommandMerge(args)
+
+	log.Println("flags", tools.FmtJSONString(flags))
+
+	tilerFlags := flags.TilerFlags
+
+	// Put args inside a TilerOptions struct
+	opts := tiler.TilerOptions{
+		Input:                  *tilerFlags.Input,
+		Srid:                   *tilerFlags.Srid,
+		EightBitColors:         *tilerFlags.EightBitColors,
+		ZOffset:                *tilerFlags.ZOffset,
+		MaxNumPointsPerNode:    int32(*tilerFlags.MaxNumPts),
+		EnableGeoidZCorrection: *tilerFlags.ZGeoidCorrection,
+		FolderProcessing:       *tilerFlags.FolderProcessing,
+		Recursive:              *tilerFlags.RecursiveFolderProcessing,
+		Algorithm:              tiler.Algorithm(strings.ToUpper(*tilerFlags.Algorithm)),
+		CellMinSize:            *tilerFlags.GridCellMinSize,
+		CellMaxSize:            *tilerFlags.GridCellMaxSize,
+		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+		TilerMergeOptions: &tiler.TilerMergeOptions{
+			Output: "",
+		},
+	}
+
+	// Validate TilerOptions
+	if msg, res := validateOptionsForCommandMerge(&opts, &flags); !res {
+		log.Fatal("Error parsing input parameters: " + msg)
+	}
+
+	// Starts the tiler
+	// defer timeTrack(time.Now(), "tiler")
+	err := pkg.NewTilerMerge(tools.NewStandardFileFinder(), std_algorithm_manager.NewAlgorithmManager(&opts)).RunTiler(&opts)
+
+	if err != nil {
+		log.Fatal("Error while tiling: ", err)
+	} else {
+		tools.LogOutput("Conversion Completed")
+	}
+
+}
+
+func validateOptionsForCommandMerge(opts *tiler.TilerOptions, flags *tools.FlagsForCommandMerge) (string, bool) {
+	if _, err := os.Stat(opts.Input); os.IsNotExist(err) {
+		return "Input file/folder not found", false
 	}
 
 	if opts.RefineMode == "" {

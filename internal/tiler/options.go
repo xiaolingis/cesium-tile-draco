@@ -44,7 +44,6 @@ func ParseRefineMode(value string) RefineMode {
 // Contains the options needed for the tiling algorithm
 type TilerOptions struct {
 	Input                  string     // Input LAS file/folder
-	Output                 string     // Output Cesium Tileset folder
 	Srid                   int        // EPSG code for SRID of input LAS points
 	EightBitColors         bool       // if true assume that LAS uses 8bit color depth
 	ZOffset                float64    // Z Offset in meters to apply to points during conversion
@@ -52,9 +51,19 @@ type TilerOptions struct {
 	EnableGeoidZCorrection bool       // Enables the conversion from geoid to ellipsoid height
 	FolderProcessing       bool       // Enables the processing of all LAS files in folder
 	Recursive              bool       // Recursive lookup of LAS files in subfolders
-	Silent                 bool       // Suppressess console messages
 	Algorithm              Algorithm  // Algorithm to use
 	CellMaxSize            float64    // Max cell size for grid algorithm
 	CellMinSize            float64    // Min cell size for grid algorithm
 	RefineMode             RefineMode // Refine mode to use to generate the tileset
+
+	TilerIndexOptions *TilerIndexOptions
+	TilerMergeOptions *TilerMergeOptions
+}
+
+type TilerIndexOptions struct {
+	Output string // Output Cesium Tileset folder
+}
+
+type TilerMergeOptions struct {
+	Output string // Output Cesium Tileset folder
 }

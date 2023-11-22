@@ -139,7 +139,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 	// add producer to waitgroup and launch producer goroutine
 	waitGroup.Add(1)
 
-	producer := io.NewStandardProducer(opts.Output, subfolder, opts)
+	producer := io.NewStandardProducer(opts.TilerIndexOptions.Output, subfolder, opts)
 	go producer.Produce(workChannel, &waitGroup, octree.GetRootNode())
 
 	// add consumers to waitgroup and launch them
@@ -171,7 +171,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOptions, filePath string, lasFile *lidario.LasFile) error {
 	fileName := getFilenameWithoutExtension(filePath)
 	subFolder := fileName
-	parentFolder := path.Join(opts.Output, subFolder)
+	parentFolder := path.Join(opts.TilerIndexOptions.Output, subFolder)
 
 	var err error
 
