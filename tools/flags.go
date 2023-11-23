@@ -5,6 +5,12 @@ import (
 	"log"
 )
 
+const (
+	CommandIndex         = "index"
+	CommandMergeChildren = "merge-children"
+	CommandMergeTree     = "merge-tree"
+)
+
 type FlagsGlobal struct {
 	Help    *bool `json:"help"`
 	Version *bool `json:"version"`

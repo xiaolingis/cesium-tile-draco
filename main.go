@@ -63,15 +63,16 @@ func main() {
 	cmd, args := args[0], args[1:]
 
 	switch cmd {
-	case "index":
+	case tools.CommandIndex:
 		mainCommandIndex(args)
-	case "merge":
-		mainCommandMerge(args)
+	case tools.CommandMergeChildren:
+		mainCommandMerge(args, cmd)
+	case tools.CommandMergeTree:
+		mainCommandMerge(args, cmd)
 	default:
 		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
 	}
 
-	return
 }
 
 func mainCommandIndex(args []string) {
@@ -118,6 +119,8 @@ func mainCommandIndex(args []string) {
 		CellMinSize:            *tilerFlags.GridCellMinSize,
 		CellMaxSize:            *tilerFlags.GridCellMaxSize,
 		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+
+		Command: tools.CommandIndex,
 		TilerIndexOptions: &tiler.TilerIndexOptions{
 			Output: *flags.Output,
 		},
@@ -160,7 +163,7 @@ func validateOptionsForCommandIndex(opts *tiler.TilerOptions, flags *tools.Flags
 	return "", true
 }
 
-func mainCommandMerge(args []string) {
+func mainCommandMerge(args []string, cmd string) {
 	flags := tools.ParseFlagsForCommandMerge(args)
 
 	log.Println("flags", tools.FmtJSONString(flags))
@@ -169,6 +172,7 @@ func mainCommandMerge(args []string) {
 
 	// Put args inside a TilerOptions struct
 	opts := tiler.TilerOptions{
+		Command:                cmd,
 		Input:                  *tilerFlags.Input,
 		Srid:                   *tilerFlags.Srid,
 		EightBitColors:         *tilerFlags.EightBitColors,
@@ -193,7 +197,9 @@ func mainCommandMerge(args []string) {
 
 	// Starts the tiler
 	// defer timeTrack(time.Now(), "tiler")
-	err := pkg.NewTilerMerge(tools.NewStandardFileFinder(), std_algorithm_manager.NewAlgorithmManager(&opts)).RunTiler(&opts)
+	fileFinder := tools.NewStandardFileFinder()
+	algorithmManager := std_algorithm_manager.NewAlgorithmManager(&opts)
+	err := pkg.NewTilerMerge(fileFinder, algorithmManager).RunTiler(&opts)
 
 	if err != nil {
 		log.Fatal("Error while tiling: ", err)

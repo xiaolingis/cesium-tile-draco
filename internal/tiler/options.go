@@ -6,6 +6,7 @@ type Algorithm string
 type RefineMode string
 
 const (
+
 	// Uniform random pick among all loaded elements. points will tend to be selected in areas with higher density.
 	Grid Algorithm = "GRID"
 
@@ -56,6 +57,7 @@ type TilerOptions struct {
 	CellMinSize            float64    // Min cell size for grid algorithm
 	RefineMode             RefineMode // Refine mode to use to generate the tileset
 
+	Command           string
 	TilerIndexOptions *TilerIndexOptions
 	TilerMergeOptions *TilerMergeOptions
 }
@@ -66,4 +68,37 @@ type TilerIndexOptions struct {
 
 type TilerMergeOptions struct {
 	Output string // Output Cesium Tileset folder
+}
+
+func (opt *TilerOptions) Copy() *TilerOptions {
+	// newOpt := *opt
+	newOpt := &TilerOptions{
+		Input:                  opt.Input,
+		Srid:                   opt.Srid,
+		EightBitColors:         opt.EightBitColors,
+		ZOffset:                opt.ZOffset,
+		MaxNumPointsPerNode:    opt.MaxNumPointsPerNode,
+		EnableGeoidZCorrection: opt.EnableGeoidZCorrection,
+		FolderProcessing:       opt.FolderProcessing,
+		Recursive:              opt.Recursive,
+		Algorithm:              opt.Algorithm,
+		CellMaxSize:            opt.CellMaxSize,
+		CellMinSize:            opt.CellMinSize,
+		RefineMode:             opt.RefineMode,
+		Command:                opt.Command,
+		TilerIndexOptions:      nil,
+		TilerMergeOptions:      nil,
+	}
+
+	if opt.TilerIndexOptions != nil {
+		indexOpt := *opt.TilerIndexOptions
+		newOpt.TilerIndexOptions = &indexOpt
+	}
+
+	if opt.TilerMergeOptions != nil {
+		mergeOpt := *opt.TilerMergeOptions
+		newOpt.TilerMergeOptions = &mergeOpt
+	}
+
+	return newOpt
 }

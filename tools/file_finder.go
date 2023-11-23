@@ -65,8 +65,8 @@ func (f *StandardFileFinder) GetLasFilesToMerge(opts *tiler.TilerOptions) []stri
 func (f *StandardFileFinder) getLasFilesFromInputSubFolder(opts *tiler.TilerOptions) []string {
 	var lasFiles = make([]string, 0)
 
-	rootDir := strings.TrimSuffix(filepath.Join(opts.Input, "/"), "/") + "/"
-	lasFileDepth := 1
+	rootDir := strings.TrimSuffix(filepath.Join(opts.Input, "/"), "/")
+	lasFileDepth := 2
 
 	log.Println(opts.Input, rootDir)
 
@@ -74,13 +74,19 @@ func (f *StandardFileFinder) getLasFilesFromInputSubFolder(opts *tiler.TilerOpti
 	err := filepath.Walk(
 		rootDir,
 		func(path string, info os.FileInfo, err error) error {
+			if os.SameFile(info, baseInfo) {
+				return nil // walk into rootDir
+			}
+
 			pathDepth := strings.Count(strings.TrimPrefix(path, rootDir), string("/"))
 			// log.Println("walk_path:", path, ", pathDepth:", pathDepth)
 
-			if info.IsDir() && pathDepth >= lasFileDepth && !os.SameFile(info, baseInfo) {
-				return filepath.SkipDir
+			if info.IsDir() {
+				if pathDepth >= lasFileDepth {
+					return filepath.SkipDir
+				}
 			} else {
-				if strings.ToLower(filepath.Ext(info.Name())) == ".las" {
+				if pathDepth == lasFileDepth && strings.ToLower(filepath.Ext(info.Name())) == ".las" {
 					lasFiles = append(lasFiles, path)
 				}
 			}

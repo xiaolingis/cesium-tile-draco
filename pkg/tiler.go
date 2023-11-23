@@ -42,7 +42,7 @@ func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
 	lasFiles := tiler.fileFinder.GetLasFilesToProcess(opts)
 	log.Println("las_file list", lasFiles)
 	for i, filePath := range lasFiles {
-		log.Printf("las_file path %d [%s]", i, filePath)
+		log.Printf("las_file path %d [%s]", i+1, filePath)
 	}
 
 	// load las points in octree buffer
@@ -73,9 +73,11 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 	}()
 
 	tiler.prepareDataStructure(tree)
-	tiler.exportToCesiumTileset(tree, opts, getFilenameWithoutExtension(filePath))
 
-	tiler.exportRootNodeLas(tree, opts, filePath, lasFileLoader.LasFile)
+	subfolder := fmt.Sprintf("%s%s", tools.ChunkTilesetFilePrefix, getFilenameWithoutExtension(filePath))
+	tiler.exportToCesiumTileset(tree, opts, subfolder)
+
+	tiler.exportRootNodeLas(tree, opts, subfolder, lasFileLoader.LasFile)
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 }
@@ -102,9 +104,9 @@ func (tiler *Tiler) prepareDataStructure(octree octree.ITree) {
 	}
 }
 
-func (tiler *Tiler) exportToCesiumTileset(octree octree.ITree, opts *tiler.TilerOptions, fileName string) {
+func (tiler *Tiler) exportToCesiumTileset(octree octree.ITree, opts *tiler.TilerOptions, subfolder string) {
 	tools.LogOutput("> exporting data...")
-	err := tiler.exportTreeAsTileset(opts, octree, fileName)
+	err := tiler.exportTreeAsTileset(opts, octree, subfolder)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,10 +181,8 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 	return nil
 }
 
-func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOptions, filePath string, lasFile *lidario.LasFile) error {
-	fileName := getFilenameWithoutExtension(filePath)
-	subFolder := fileName
-	parentFolder := path.Join(opts.TilerIndexOptions.Output, subFolder)
+func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOptions, subfolder string, lasFile *lidario.LasFile) error {
+	parentFolder := path.Join(opts.TilerIndexOptions.Output, subfolder)
 
 	var err error
 
@@ -225,11 +225,11 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 		newLf.AddLasPoint(pointLas)
 
 		// print export-progress
-		progress = int(100.0 * float64(i) / float64(numberOfPoints))
+		progress = int(100.0 * float64(i+1) / float64(numberOfPoints))
 		if progress != oldProgress {
 			oldProgress = progress
-			if progress%10 == 0 {
-				fmt.Printf("export root_node rogress: %v\n", progress)
+			if progress%50 == 0 {
+				fmt.Printf("export root-node progress: %v\n", progress)
 			}
 		}
 	}
