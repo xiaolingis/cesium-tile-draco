@@ -63,7 +63,10 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() { _ = lasFileLoader.LasFile.Close() }()
+	defer func() {
+		_ = lasFileLoader.LasFile.Clear()
+		_ = lasFileLoader.LasFile.Close()
+	}()
 
 	tiler.prepareDataStructure(tree)
 	tiler.exportToCesiumTileset(tree, opts, getFilenameWithoutExtension(filePath))
@@ -194,6 +197,8 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 		log.Fatal(err)
 	}
 
+	defer func() { newLf.Close() }()
+
 	progress := 0
 	oldProgress := -1
 
@@ -224,8 +229,6 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 			}
 		}
 	}
-
-	newLf.Close()
 
 	return nil
 }

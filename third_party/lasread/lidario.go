@@ -310,6 +310,20 @@ func (las *LasFile) Close() error {
 	return las.f.Close()
 }
 
+// Clear clear a LasFile
+func (las *LasFile) Clear() error {
+	if len(las.pointData) > 0 {
+		las.pointData = make([]PointRecord0, 0)
+	}
+	if len(las.gpsData) > 0 {
+		las.gpsData = make([]float64, 0)
+	}
+	if len(las.rgbData) > 0 {
+		las.rgbData = make([]RgbData, 0)
+	}
+	return nil
+}
+
 // GetXYZ returns the x, y, z data for a specified data
 func (las *LasFile) GetXYZ(index int) (float64, float64, float64, error) {
 	if index < 0 || index >= las.Header.NumberPoints {
