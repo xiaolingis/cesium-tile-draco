@@ -73,6 +73,11 @@ func (tree *GridTree) IsBuilt() bool {
 	return tree.built
 }
 
+func (tree *GridTree) Clear() bool {
+	tree.clear()
+	return true
+}
+
 func (tree *GridTree) AddPoint(
 	coordinate *geometry.Coordinate,
 	r uint8, g uint8, b uint8,
@@ -130,6 +135,11 @@ func (tree *GridTree) init() {
 
 	tree.rootNode = node
 	tree.InitializeLoader()
+}
+
+func (tree *GridTree) clear() {
+	tree.rootNode = nil
+	tree.ClearLoader()
 }
 
 func (tree *GridTree) launchParallelPointLoaders(waitGroup *sync.WaitGroup) {

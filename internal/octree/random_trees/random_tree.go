@@ -64,11 +64,21 @@ func (t *RandomTree) Build() error {
 	return nil
 }
 
+func (t *RandomTree) Clear() bool {
+	t.clear()
+	return true
+}
+
 func (t *RandomTree) init() {
 	box := t.GetBounds()
 	node := NewRandomNode(geometry.NewBoundingBox(box[0], box[1], box[2], box[3], box[4], box[5]), t.opts, nil)
 	t.rootNode = node
 	t.InitializeLoader()
+}
+
+func (t *RandomTree) clear() {
+	t.rootNode = nil
+	t.ClearLoader()
 }
 
 func (t *RandomTree) launchParallelPointLoaders(waitGroup *sync.WaitGroup) {

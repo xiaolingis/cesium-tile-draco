@@ -51,6 +51,8 @@ func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
 		var tree = tiler.algorithmManager.GetTreeAlgorithm()
 		tools.LogOutput("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFiles)))
 		tiler.processLasFile(filePath, opts, tree)
+
+		// tree.Clear()
 	}
 	tiler.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
 
@@ -66,6 +68,8 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 	defer func() {
 		_ = lasFileLoader.LasFile.Clear()
 		_ = lasFileLoader.LasFile.Close()
+		// lasFileLoader.LasFile = nil
+		// lasFileLoader.Tree = nil
 	}()
 
 	tiler.prepareDataStructure(tree)

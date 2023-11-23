@@ -1,10 +1,11 @@
 package point_loader
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"math"
 	"math/rand"
 	"sync"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 )
 
 // Stores points and returns them shuffled according to the following strategy. points are grouped in buckets (boxes).
@@ -79,6 +80,11 @@ func (eb *RandomBoxLoader) InitializeLoader() {
 	}
 	rand.Shuffle(len(eb.Keys), func(i, j int) { eb.Keys[i], eb.Keys[j] = eb.Keys[j], eb.Keys[i] })
 	eb.currentKeyIndex = 0
+}
+
+func (eb *RandomBoxLoader) ClearLoader() {
+	eb.Buckets = make(map[geoKey]*safeElementList)
+	eb.Keys = make([]*geoKey, 0)
 }
 
 func (eb *RandomBoxLoader) GetBounds() []float64 {

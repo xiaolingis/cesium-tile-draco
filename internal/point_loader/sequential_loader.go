@@ -1,10 +1,11 @@
 package point_loader
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"math"
 	"sync"
 	"sync/atomic"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 )
 
 // Stores points and returns them in order
@@ -51,6 +52,10 @@ func (eb *SequentialLoader) GetNext() (*data.Point, bool) {
 }
 
 func (eb *SequentialLoader) InitializeLoader() {}
+
+func (eb *SequentialLoader) ClearLoader() {
+	eb.sequentialList = make([]*data.Point, 0)
+}
 
 // Updates the data cloud bounds as per loaded RandomLoader elements and given additional element
 func (eb *SequentialLoader) recomputeBoundsFromElement(element *data.Point) {
