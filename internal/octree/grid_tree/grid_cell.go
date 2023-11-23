@@ -1,9 +1,10 @@
 package grid_tree
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"math"
 	"sync"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 )
 
 // Data structure that accepts points and stores just the one closest to its center, or if the side is too small,

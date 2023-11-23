@@ -36,10 +36,14 @@ func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.Al
 
 // Starts the tiling process
 func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
-	tools.LogOutput("Preparing list of files to process...")
+	log.Println("Preparing list of files to process...")
 
 	// Prepare list of files to process
 	lasFiles := tiler.fileFinder.GetLasFilesToProcess(opts)
+	log.Println("las_file list", lasFiles)
+	for i, filePath := range lasFiles {
+		log.Printf("las_file path %d [%s]", i, filePath)
+	}
 
 	// load las points in octree buffer
 	for i, filePath := range lasFiles {

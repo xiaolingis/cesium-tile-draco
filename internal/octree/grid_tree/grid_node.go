@@ -2,6 +2,7 @@ package grid_tree
 
 import "C"
 import (
+	"log"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -256,6 +257,59 @@ func (n *GridNode) initializeChildren() {
 	}
 	n.initialized = true
 	n.Unlock()
+}
+
+func (n *GridNode) SetChildren(children []*GridNode) {
+	n.TruncateChildren()
+	n.totalNumberOfPoints = int64(n.numberOfPoints)
+
+	for i, child := range children {
+		n.children[i] = children[i]
+		n.totalNumberOfPoints += child.totalNumberOfPoints
+	}
+}
+
+func (n *GridNode) SetSpartialBoundingBoxByMergeBbox(bboxList []*geometry.BoundingBox) {
+
+	nBbox := n.GetBoundingBox()
+	minX, maxX, minY, maxY, minZ, maxZ := nBbox.Xmin, nBbox.Xmax, nBbox.Ymin, nBbox.Ymax, nBbox.Zmin, nBbox.Zmax
+	for _, bbox := range bboxList {
+		minX = math.Min(float64(bbox.Xmin), minX)
+		minY = math.Min(float64(bbox.Ymin), minY)
+		minZ = math.Min(float64(bbox.Zmin), minZ)
+		maxX = math.Max(float64(bbox.Xmax), maxX)
+		maxY = math.Max(float64(bbox.Ymax), maxY)
+		maxZ = math.Max(float64(bbox.Zmax), maxZ)
+	}
+
+	newBbox := &geometry.BoundingBox{
+		Xmin: minX,
+		Xmax: maxX,
+		Ymin: minY,
+		Ymax: maxY,
+		Zmin: minZ,
+		Zmax: maxZ,
+		Xmid: (minX + maxX) / 2,
+		Ymid: (minY + maxY) / 2,
+		Zmid: (minZ + maxZ) / 2,
+	}
+
+	n.boundingBox = newBbox
+}
+
+func (n *GridNode) TruncateChildren() {
+	log.Println("clear merged-tree.children. children-length:", len(n.children))
+	for i := 0; i < 8; i++ {
+		n.children[i] = nil
+	}
+
+	if n.TotalNumberOfPoints() != int64(n.NumberOfPoints()) {
+		log.Printf("clear merged-tree.children. NumberOfPoints[%d] TotalNumberOfPoints:[%d]", n.NumberOfPoints(), n.TotalNumberOfPoints())
+		n.totalNumberOfPoints = int64(n.numberOfPoints)
+	}
+
+	n.leaf = 1
+
 }
 
 // Returns a bounding box from the given box and the given octant index

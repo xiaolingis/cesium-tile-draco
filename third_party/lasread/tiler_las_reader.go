@@ -118,7 +118,7 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 
 	lasFileLoader.LasFile = las
 	log.Printf("las_file [%s] open success. num_of_points:%d", las.fileName, las.Header.NumberPoints)
-	log.Println("las_file header", las.Header.String())
+	// log.Println("las_file header", las.Header.String())
 
 	if las.fileMode != "rh" {
 

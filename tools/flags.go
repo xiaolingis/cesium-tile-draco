@@ -111,14 +111,14 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	zOffset := defineFloat64FlagCommand(flagCommand, "zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
 	zGeoidCorrection := defineBoolFlagCommand(flagCommand, "geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
 	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
-	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
-	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 0.15, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
-	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 10.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
+	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 
 	folderProcessing := true
 
 	maxNumPointsPerNode := 50000
 	algorithm := "grid"
+	refineMode := "REPLACE"
 
 	flagCommand.Parse(args)
 
@@ -135,7 +135,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			Algorithm:                 &algorithm,
 			GridCellMaxSize:           gridCellMaxSize,
 			GridCellMinSize:           gridCellMinSize,
-			RefineMode:                refineMode,
+			RefineMode:                &refineMode,
 		},
 	}
 }
