@@ -1,9 +1,12 @@
 package pkg
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -77,6 +80,7 @@ func (tiler *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
 	defer func() { _ = lasFile.Close() }()
 
 	tiler.exportTreeRootTileset(tree, opts)
+	tiler.repairTilesetMetadata(opts, lasFilePathList)
 
 	tiler.exportRootNodeLas(tree, opts, lasFile)
 
@@ -332,6 +336,107 @@ func (tiler *TilerMerge) RepairParentTree(octree octree.ITree, treeList []*grid_
 	rootNode.SetChildren(nodeList)
 
 	return nil
+}
+
+func (tiler *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFilePathList []string) {
+	// folder hierachy
+	/*
+		${output}/
+			|- tileset.json
+			|- content.pnts
+			|- content.las
+			|
+			 ---
+			|    \
+			|     chunk-tileset-0-xxx/
+			|  		|- tileset.json
+			|  		|- content.pnts
+			|  		|- content.las
+			...
+			 ---
+			|    \
+			|     chunk-tileset-2-xxx/
+			|  		|- tileset.json
+			|  		|- content.pnts
+			|  		|- content.las
+			...
+	*/
+	rootDir := filepath.Join(opts.Input, "")
+
+	// read tileset for root
+	rootMetadataPath := filepath.Join(rootDir, "tileset.json")
+	rootTileset := io.Tileset{}
+	rootFile, err := ioutil.ReadFile(rootMetadataPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(rootFile), &rootTileset); err != nil {
+		log.Fatal(err)
+	}
+
+	// read tileset for children
+	metadataPathList := make([]string, 0)
+	for _, filePath := range lasFilePathList {
+		metadataPath := filepath.Join(filepath.Dir(filePath), "tileset.json")
+		metadataPathList = append(metadataPathList, metadataPath)
+	}
+	childTilesetList := make([]*io.Tileset, 0)
+	for _, filePath := range metadataPathList {
+		childTileset := io.Tileset{}
+		childFile, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := json.Unmarshal([]byte(childFile), &childTileset); err != nil {
+			log.Fatal(err)
+		}
+		childTilesetList = append(childTilesetList, &childTileset)
+	}
+
+	// merge tileset .children
+	children := make([]io.Child, 0)
+	for i, childTileset := range childTilesetList {
+		metadataPath := metadataPathList[i]
+		relativeMetadataPath := strings.TrimPrefix(strings.TrimPrefix(metadataPath, rootDir), "/")
+		child := io.Child{
+			Content: io.Content{
+				Url: relativeMetadataPath,
+			},
+			BoundingVolume: childTileset.Root.BoundingVolume,
+			GeometricError: childTileset.Root.GeometricError,
+			Refine:         "REPLACE",
+		}
+
+		children = append(children, child)
+	}
+	rootTileset.Root.Children = children
+
+	// merge tileset .boundingVolume
+	region := rootTileset.Root.BoundingVolume.Region
+	for _, childTileset := range childTilesetList {
+		childRegion := childTileset.Root.BoundingVolume.Region
+
+		region[0] = math.Min(float64(childRegion[0]), region[0])
+		region[1] = math.Min(float64(childRegion[1]), region[1])
+		region[2] = math.Max(float64(childRegion[2]), region[2])
+		region[3] = math.Max(float64(childRegion[3]), region[3])
+		region[4] = math.Min(float64(childRegion[4]), region[4])
+		region[5] = math.Max(float64(childRegion[5]), region[5])
+	}
+	rootTileset.Root.BoundingVolume.Region = region
+
+	// write root tilset.json
+	// Outputting a formatted json file
+	rootTilesetJSON, err := json.MarshalIndent(rootTileset, "", "\t")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Writes the tileset.json binary content to the given file
+	if err = ioutil.WriteFile(rootMetadataPath, rootTilesetJSON, 0666); err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func (tiler *TilerMerge) exportTreeRootTileset(octree octree.ITree, opts *tiler.TilerOptions) {
