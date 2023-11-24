@@ -77,7 +77,10 @@ func (tiler *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
 		log.Fatal(err)
 		return err
 	}
-	defer func() { _ = lasFile.Close() }()
+	defer func() {
+		_ = lasFile.Clear()
+		_ = lasFile.Close()
+	}()
 
 	tiler.exportTreeRootTileset(tree, opts)
 	tiler.repairTilesetMetadata(opts, lasFilePathList)
@@ -242,7 +245,10 @@ func (tiler *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.TilerO
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() { _ = lasFileLoader.LasFile.Close() }()
+	defer func() {
+		_ = lasFileLoader.LasFile.Clear()
+		_ = lasFileLoader.LasFile.Close()
+	}()
 
 	tiler.prepareDataStructure(tree)
 	log.Println(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
