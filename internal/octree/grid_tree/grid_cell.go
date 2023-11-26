@@ -32,19 +32,23 @@ func (gc *gridCell) getCellCenter() (float64, float64, float64) {
 
 // submits a point to the cell, eventually returning a pointer to the point pushed out.
 func (gc *gridCell) pushPoint(point *data.Point) *data.Point {
+	gc.Lock()
 	if gc.points == nil {
 		gc.storeFirstPoint(point)
+		gc.Unlock()
 		return nil
 	}
 
 	if gc.isSizeBelowThreshold() {
-		gc.Lock()
 		gc.points = append(gc.points, point)
 		gc.Unlock()
 		return nil
 	}
 
-	return gc.storeClosestPointAndReturnFarthestOne(point)
+	retPoint := gc.storeClosestPointAndReturnFarthestOne(point)
+	gc.Unlock()
+
+	return retPoint
 }
 
 // checks if the cell has reached the lower size limit for which it must store all points submitted
@@ -54,10 +58,8 @@ func (gc *gridCell) isSizeBelowThreshold() bool {
 
 // sets the points slice to a new slice containing the input point and stores its distanceFromCenter
 func (gc *gridCell) storeFirstPoint(point *data.Point) {
-	gc.Lock()
 	gc.points = []*data.Point{point}
 	gc.distanceFromCenter = gc.getDistanceFromCenter(point)
-	gc.Unlock()
 }
 
 // takes the input point and compares its distance from the center to the one in the points array,
@@ -66,11 +68,9 @@ func (gc *gridCell) storeClosestPointAndReturnFarthestOne(point *data.Point) *da
 	distance := gc.getDistanceFromCenter(point)
 
 	if distance < gc.distanceFromCenter {
-		gc.Lock()
 		oldPoint := gc.points[0]
 		gc.points[0] = point
 		gc.distanceFromCenter = distance
-		gc.Unlock()
 		return oldPoint
 	}
 
