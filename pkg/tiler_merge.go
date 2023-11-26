@@ -276,6 +276,10 @@ func (tiler *TilerMerge) prepareDataStructure(octree octree.ITree) error {
 		log.Fatal(err)
 		return err
 	}
+
+	rootNode := octree.GetRootNode()
+	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
+
 	return nil
 }
 

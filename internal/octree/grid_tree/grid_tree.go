@@ -59,6 +59,8 @@ func (tree *GridTree) Build() error {
 	tree.launchParallelPointLoaders(&wg)
 	wg.Wait()
 
+	tree.Loader.ClearLoader()
+
 	tree.rootNode.(*GridNode).BuildPoints()
 	tree.built = true
 
@@ -139,7 +141,7 @@ func (tree *GridTree) init() {
 
 func (tree *GridTree) clear() {
 	tree.rootNode = nil
-	tree.ClearLoader()
+	tree.Loader.ClearLoader()
 }
 
 func (tree *GridTree) launchParallelPointLoaders(waitGroup *sync.WaitGroup) {

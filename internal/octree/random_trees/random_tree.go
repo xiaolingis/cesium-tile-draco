@@ -59,6 +59,8 @@ func (t *RandomTree) Build() error {
 	t.launchParallelPointLoaders(&wg)
 	wg.Wait()
 
+	t.Loader.ClearLoader()
+
 	t.built = true
 
 	return nil
@@ -78,7 +80,7 @@ func (t *RandomTree) init() {
 
 func (t *RandomTree) clear() {
 	t.rootNode = nil
-	t.ClearLoader()
+	t.Loader.ClearLoader()
 }
 
 func (t *RandomTree) launchParallelPointLoaders(waitGroup *sync.WaitGroup) {
