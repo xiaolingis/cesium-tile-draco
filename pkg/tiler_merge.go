@@ -122,7 +122,7 @@ func (tiler *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
 				}
 
 				if strings.HasPrefix(filepath.Base(path), tools.ChunkTilesetFilePrefix) {
-					pointsFilePath := filepath.Join(path, "/content.pnts")
+					pointsFilePath := filepath.Join(path, "/content.las")
 					if _, err := os.Stat(pointsFilePath); err == nil {
 						return filepath.SkipDir
 					}
