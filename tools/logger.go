@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"fmt"
+	"log"
 	"time"
 )
 
@@ -27,8 +27,8 @@ func DisableLoggerTimestamp() {
 func LogOutput(val ...interface{}) {
 	if isEnabled {
 		if printTimestamp {
-			fmt.Print("[" + time.Now().Format("2006-01-02 15.04:05.000") + "] ")
+			log.Println("[" + time.Now().Format("2006-01-02 15.04:05.000") + "] ")
 		}
-		fmt.Println(val...)
+		log.Println(val...)
 	}
 }
