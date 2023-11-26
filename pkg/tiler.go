@@ -97,11 +97,14 @@ func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree 
 func (tiler *Tiler) prepareDataStructure(octree octree.ITree) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
-	err := octree.Build()
 
-	if err != nil {
+	if err := octree.Build(); err != nil {
 		log.Fatal(err)
 	}
+
+	rootNode := octree.GetRootNode()
+	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
+
 }
 
 func (tiler *Tiler) exportToCesiumTileset(octree octree.ITree, opts *tiler.TilerOptions, subfolder string) {
@@ -210,7 +213,7 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 	numberOfPoints := rootNode.NumberOfPoints()
 	points := rootNode.GetPoints()
 
-	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints())
+	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(points))
 
 	for i := 0; i < int(numberOfPoints); i++ {
 		point := points[i]

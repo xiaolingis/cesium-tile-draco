@@ -198,6 +198,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 				pointExtend := &data.PointExtend{
 					LasPointIndex: i,
 				}
+				// log.Println(X, Y, Z, R, G, B, Intensity, Classification)
 				lasFileLoader.Tree.AddPoint(
 					&geometry.Coordinate{X: X, Y: Y, Z: Z},
 					R, G, B,

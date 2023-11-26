@@ -660,7 +660,9 @@ func (las *LasFile) readPoints() error {
 					rgb.Blue = binary.LittleEndian.Uint16(b[offset : offset+2])
 					offset += 2
 					las.rgbData[i] = rgb
+					// log.Println(tools.FmtJSONString(rgb))
 				}
+				// log.Println(tools.FmtJSONString(p))
 			}
 		}(startingPoint, endingPoint)
 		startingPoint = endingPoint + 1
