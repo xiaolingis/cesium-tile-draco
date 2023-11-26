@@ -500,7 +500,7 @@ func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, octree 
 	// find if there are errors in the error channel buffer
 	withErrors := false
 	for err := range errorChannel {
-		fmt.Println(err)
+		log.Println(err)
 		withErrors = true
 	}
 	if withErrors {
@@ -557,7 +557,7 @@ func (tiler *TilerMerge) exportRootNodeLas(octree octree.ITree, opts *tiler.Tile
 		if progress != oldProgress {
 			oldProgress = progress
 			if progress%50 == 0 {
-				fmt.Printf("export root-node progress: %v\n", progress)
+				log.Printf("export root-node progress: %v\n", progress)
 			}
 		}
 	}

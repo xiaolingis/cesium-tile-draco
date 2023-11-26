@@ -174,7 +174,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 	// find if there are errors in the error channel buffer
 	withErrors := false
 	for err := range errorChannel {
-		fmt.Println(err)
+		log.Println(err)
 		withErrors = true
 	}
 	if withErrors {
@@ -192,7 +192,7 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 	// var lf *lidario.LasFile
 	// lf, err = lidario.NewLasFile(filePath, "r")
 	// if err != nil {
-	// 	fmt.Println(err)
+	// 	log.Println(err)
 	// 	log.Fatal(err)
 	// }
 	// defer lf.Close()
@@ -232,7 +232,7 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 		if progress != oldProgress {
 			oldProgress = progress
 			if progress%50 == 0 {
-				fmt.Printf("export root-node progress: %v\n", progress)
+				log.Printf("export root-node progress: %v\n", progress)
 			}
 		}
 	}

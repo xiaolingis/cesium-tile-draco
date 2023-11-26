@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"runtime"
@@ -51,7 +52,7 @@ func NewLasFile(fileName, fileMode string) (*LasFile, error) {
 		}
 	} else {
 		las.fileMode = "w"
-		fmt.Println("Okay, write the new file: ", fileName)
+		log.Println("Okay, write the new file: ", fileName)
 		var err error
 		if las.f, err = os.Create(las.fileName); err != nil {
 			return &las, err
