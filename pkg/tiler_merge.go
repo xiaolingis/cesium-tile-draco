@@ -405,6 +405,7 @@ func (tiler *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFile
 
 	// merge tileset .children
 	children := make([]io.Child, 0)
+	childGeometricError := float64(0.0)
 	for i, childTileset := range childTilesetList {
 		metadataPath := metadataPathList[i]
 		relativeMetadataPath := strings.TrimPrefix(strings.TrimPrefix(metadataPath, rootDir), "/")
@@ -417,9 +418,14 @@ func (tiler *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFile
 			Refine:         "REPLACE",
 		}
 
+		if childGeometricError < childTileset.Root.GeometricError {
+			childGeometricError = childTileset.Root.GeometricError
+		}
+
 		children = append(children, child)
 	}
 	rootTileset.Root.Children = children
+	rootTileset.Root.GeometricError = 2 * childGeometricError
 
 	// merge tileset .boundingVolume
 	region := rootTileset.Root.BoundingVolume.Region
