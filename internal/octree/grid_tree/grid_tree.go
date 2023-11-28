@@ -121,6 +121,26 @@ func (tree *GridTree) getPointFromRawData(
 	)
 }
 
+func (tree *GridTree) GetBounds() []float64 {
+	box := tree.Loader.GetBounds()
+	minX, maxX, minY, maxY, minZ, maxZ := box[0], box[1], box[2], box[3], box[4], box[5]
+
+	if tools.IsFloatEqual(minX, maxX) {
+		minX -= 0.0001
+		maxX += 0.0001
+	}
+	if tools.IsFloatEqual(minY, maxY) {
+		minY -= 0.0001
+		maxY += 0.0001
+	}
+	if tools.IsFloatEqual(minZ, maxZ) {
+		minZ -= 0.0001
+		maxZ += 0.0001
+	}
+
+	return []float64{minX, maxX, minY, maxY, minZ, maxZ}
+}
+
 func (tree *GridTree) init() {
 	box := tree.GetBounds()
 
