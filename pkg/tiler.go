@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -198,12 +199,24 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 	// defer lf.Close()
 
 	newFileName := path.Join(parentFolder, "content.las")
+	if _, err := os.Stat(newFileName); err == nil {
+		if err := os.Remove(newFileName); err != nil {
+			log.Fatal(err)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		log.Fatal(err)
+	}
+
 	newLf, err := lidario.InitializeUsingFile(newFileName, lasFile)
 	if err != nil {
 		log.Println(err)
 		log.Fatal(err)
 	}
-	defer func() { newLf.Close() }()
+	defer func() {
+		if newLf != nil {
+			newLf.Close()
+		}
+	}()
 
 	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
 		log.Println(err)
@@ -247,7 +260,20 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 		}
 	}
 
+	newLf.Close()
+	newLf = nil
+
 	log.Println("Write las file success.", newFileName)
+
+	// Check
+	log.Printf("newFileName %s", newFileName)
+	mergedLf, err := lidario.NewLasFile(newFileName, "r")
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return err
+	}
+	defer mergedLf.Close()
 
 	return nil
 }

@@ -1,7 +1,9 @@
 package pkg
 
 import (
+	"errors"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
@@ -30,6 +32,20 @@ func (tiler *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
 			log.Println(err)
 			return nil
 		}
+	} else if opts.Command == tools.CommandVerifyLasMerge {
+		lasFilePathList := []string{
+			// "./las/10009-7-58-40-0.las",
+			// "./las/10009-6-29-20-1.las",
+			// "./0/7/7-57-41-1.las",
+			"tileset/0/chunk-tileset-7-57-41-1/content.las",
+		}
+		mergedLasFilePath, err := tiler.mergeLasFileListCheck(lasFilePathList)
+		if err != nil {
+			log.Fatal(err)
+			return nil
+		}
+		log.Println("mergedLasFilePath", mergedLasFilePath)
+		return nil
 	}
 
 	return nil
@@ -51,7 +67,11 @@ func (tiler *TilerVerify) RunTilerVerifyLas(opts *tiler.TilerOptions) error {
 		// lasFileLoader.Tree = nil
 	}()
 
+	tiler.VerifyLasLoader(opts)
+
 	tiler.prepareDataStructure(tree)
+
+	tiler.VerifyLas(lasFileLoader.LasFile, opts)
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 
@@ -83,6 +103,11 @@ func (tiler *TilerVerify) prepareDataStructure(octree octree.ITree) {
 
 }
 
+func (tiler *TilerVerify) VerifyLasLoader(opts *tiler.TilerOptions) error {
+
+	return nil
+}
+
 func (tiler *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerOptions) error {
 	lasHeader := lasFile.Header
 	log.Println("las_file num_of_points:", lasHeader.NumberPoints)
@@ -102,9 +127,107 @@ func (tiler *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerO
 			continue
 		}
 
+		if i < 10 {
+			log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+		}
+
 	}
 
 	log.Println("Verify las file success.")
 
 	return nil
+}
+
+func (tiler *TilerVerify) mergeLasFileListCheck(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
+	mergedLasFilePath := "/tmp/merged.las"
+
+	filePath := lasFilePathList[0]
+	lf0, err := lidario.NewLasFile(filePath, "r")
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+	defer func() {
+		if lf0 != nil {
+			lf0.Close()
+			lf0 = nil
+		}
+	}()
+
+	if _, err := os.Stat(mergedLasFilePath); err == nil {
+		if err := os.Remove(mergedLasFilePath); err != nil {
+			log.Fatal(err)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		log.Fatal(err)
+	}
+	newLf, err := lidario.InitializeUsingFile(mergedLasFilePath, lf0)
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+	defer func() {
+		if newLf != nil {
+			newLf.Close()
+			newLf = nil
+		}
+	}()
+
+	if err := newLf.CopyHeaderXYZ(lf0.Header); err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+
+	lf0.Close()
+	lf0 = nil
+
+	for i, filePath := range lasFilePathList {
+		log.Printf("mergeLasFileList %d/%d %s", i+1, len(lasFilePathList), filePath)
+		lf, err := lidario.NewLasFile(filePath, "r")
+		if err != nil {
+			log.Println(err)
+			log.Fatal(err)
+			return "", err
+		}
+		defer lf.Close()
+
+		if err := newLf.MergeHeaderXYZ(lf.Header); err != nil {
+			log.Println(err)
+			log.Fatal(err)
+			return "", err
+		}
+
+		for i := 0; i < int(lf.Header.NumberPoints); i++ {
+			// if i >= 5 {
+			// 	break
+			// }
+			p, err := lf.LasPoint(i)
+			if err != nil {
+				log.Println(err)
+				log.Fatal(err)
+				return "", err
+			}
+			newLf.AddLasPoint(p)
+		}
+
+		lf.Close()
+	}
+
+	newLf.Close()
+	newLf = nil
+
+	// Check
+	log.Printf("mergedLasFilePath %s", mergedLasFilePath)
+	mergedLf, err := lidario.NewLasFile(mergedLasFilePath, "r")
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+	defer mergedLf.Close()
+
+	return mergedLasFilePath, nil
 }

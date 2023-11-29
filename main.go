@@ -71,6 +71,8 @@ func main() {
 		mainCommandMerge(args, cmd)
 	case tools.CommandVerifyLas:
 		mainCommandVerifyLas(args, cmd)
+	case tools.CommandVerifyLasMerge:
+		mainCommandVerifyLas(args, cmd)
 	default:
 		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
 	}

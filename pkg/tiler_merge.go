@@ -282,32 +282,51 @@ func (tiler *TilerMerge) prepareDataStructure(octree octree.ITree) error {
 
 	return nil
 }
-
 func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
 	mergedLasFilePath := "/tmp/merged.las"
 
 	filePath := lasFilePathList[0]
-	lf, err := lidario.NewLasFile(filePath, "r")
+	lf0, err := lidario.NewLasFile(filePath, "r")
 	if err != nil {
 		log.Println(err)
 		log.Fatal(err)
 		return "", err
 	}
-	defer lf.Close()
+	defer func() {
+		if lf0 != nil {
+			lf0.Close()
+			lf0 = nil
+		}
+	}()
 
-	newLf, err := lidario.InitializeUsingFile(mergedLasFilePath, lf)
+	if _, err := os.Stat(mergedLasFilePath); err == nil {
+		if err := os.Remove(mergedLasFilePath); err != nil {
+			log.Fatal(err)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		log.Fatal(err)
+	}
+	newLf, err := lidario.InitializeUsingFile(mergedLasFilePath, lf0)
 	if err != nil {
 		log.Println(err)
 		log.Fatal(err)
 		return "", err
 	}
-	defer newLf.Close()
+	defer func() {
+		if newLf != nil {
+			newLf.Close()
+			newLf = nil
+		}
+	}()
 
-	if err := newLf.CopyHeaderXYZ(lf.Header); err != nil {
+	if err := newLf.CopyHeaderXYZ(lf0.Header); err != nil {
 		log.Println(err)
 		log.Fatal(err)
 		return "", err
 	}
+
+	lf0.Close()
+	lf0 = nil
 
 	for i, filePath := range lasFilePathList {
 		log.Printf("mergeLasFileList %d/%d %s", i+1, len(lasFilePathList), filePath)
@@ -326,6 +345,9 @@ func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFi
 		}
 
 		for i := 0; i < int(lf.Header.NumberPoints); i++ {
+			// if i >= 5 {
+			// 	break
+			// }
 			p, err := lf.LasPoint(i)
 			if err != nil {
 				log.Println(err)
@@ -334,7 +356,22 @@ func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFi
 			}
 			newLf.AddLasPoint(p)
 		}
+
+		lf.Close()
 	}
+
+	newLf.Close()
+	newLf = nil
+
+	// Check
+	log.Printf("mergedLasFilePath %s", mergedLasFilePath)
+	mergedLf, err := lidario.NewLasFile(mergedLasFilePath, "r")
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+	defer mergedLf.Close()
 
 	return mergedLasFilePath, nil
 }

@@ -166,7 +166,8 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	pointsLength := las.Header.NumberPoints * las.Header.PointRecordLength
 	b := make([]byte, pointsLength)
 	if _, err := las.f.ReadAt(b, int64(las.Header.OffsetToPoints)); err != nil && err != io.EOF {
-		// return err
+		log.Fatal(err)
+		return err
 	}
 
 	// The LAS Specifications state that:
@@ -180,17 +181,27 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	// imported and used in this project.
 
 	numCPUs := runtime.NumCPU()
+	log.Printf("parallel read numCPUs:[%d] lasFilePath:[%s]", numCPUs, lasFileLoader.LasFile.fileName)
+
 	var wg sync.WaitGroup
 	blockSize := las.Header.NumberPoints / numCPUs
+	if blockSize == 0 {
+		blockSize = 1
+	}
+	blockSize = 100000000
+
 	var startingPoint int
+	cpuThread := 1
 	for startingPoint < las.Header.NumberPoints {
 		endingPoint := startingPoint + blockSize
 		if endingPoint >= las.Header.NumberPoints {
 			endingPoint = las.Header.NumberPoints - 1
 		}
 		wg.Add(1)
-		go func(pointSt, pointEnd int) {
+		go func(pointSt, pointEnd int, threadNum int) {
 			defer wg.Done()
+			log.Printf("cpu-thread read %d/%d  pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+				threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 			var offset int
 			// var p PointRecord0
@@ -199,13 +210,15 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
 				if !las.CheckPointXYZInvalid(X, Y, Z) {
 					log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+					log.Fatal("invalid point X/Y/Z")
 					continue
 				}
-
 				pointExtend := &data.PointExtend{
 					LasPointIndex: i,
 				}
-				// log.Println(X, Y, Z, R, G, B, Intensity, Classification)
+
+				// log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+				// log.Println("las_file_reader point", X, Y, Z, R, G, B, Intensity, Classification)
 				lasFileLoader.Tree.AddPoint(
 					&geometry.Coordinate{X: X, Y: Y, Z: Z},
 					R, G, B,
@@ -214,8 +227,9 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 				)
 				// las.pointDataOctElement[i] = elem
 			}
-		}(startingPoint, endingPoint)
+		}(startingPoint, endingPoint, cpuThread)
 		startingPoint = endingPoint + 1
+		cpuThread = cpuThread + 1
 	}
 	wg.Wait()
 	return nil

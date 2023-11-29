@@ -116,7 +116,7 @@ func (tree *GridTree) getPointFromRawData(
 
 	if err != nil {
 		log.Println(err, fmt.Sprintf("srid:[%d] coordinate:[%s]", srid, tools.FmtJSONString(coordinate)))
-		log.Println(err, fmt.Sprintf("X:[%f] Y:[%f] Z:[%f]", coordinate.X, coordinate.Y, z))
+		log.Println(err, fmt.Sprintf("coordinate X:[%f] Y:[%f] Z:[%f]", coordinate.X, coordinate.Y, z))
 		log.Fatal(err)
 	}
 
@@ -154,7 +154,7 @@ func (tree *GridTree) init() {
 
 	// box  {eb.minX, eb.maxX, eb.minY, eb.maxY, eb.minZ, eb.maxZ}
 	log.Println("tree.box(minX,maxX,minY,maxY,minZ,maxZ):" + tools.FmtJSONString(box))
-	log.Println("x:", box[1]-box[0], ", y:", box[3]-box[2], ", z:", box[5]-box[4])
+	log.Println("x-diff:", box[1]-box[0], ", y-diff:", box[3]-box[2], ", z-diff:", box[5]-box[4])
 
 	node := NewGridNode(
 		nil,

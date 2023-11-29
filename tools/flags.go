@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	CommandIndex         = "index"
-	CommandMergeChildren = "merge-children"
-	CommandMergeTree     = "merge-tree"
-	CommandVerifyLas     = "verify-las"
+	CommandIndex          = "index"
+	CommandMergeChildren  = "merge-children"
+	CommandMergeTree      = "merge-tree"
+	CommandVerifyLas      = "verify-las"
+	CommandVerifyLasMerge = "verify-las-merge"
 )
 
 type FlagsGlobal struct {
