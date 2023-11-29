@@ -198,7 +198,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 				offset = i * las.Header.PointRecordLength
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
 				if !las.CheckPointXYZInvalid(X, Y, Z) {
-					log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+					log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
 					continue
 				}
 

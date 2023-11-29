@@ -69,6 +69,8 @@ func main() {
 		mainCommandMerge(args, cmd)
 	case tools.CommandMergeTree:
 		mainCommandMerge(args, cmd)
+	case tools.CommandVerifyLas:
+		mainCommandVerifyLas(args, cmd)
 	default:
 		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
 	}
@@ -210,6 +212,66 @@ func mainCommandMerge(args []string, cmd string) {
 }
 
 func validateOptionsForCommandMerge(opts *tiler.TilerOptions, flags *tools.FlagsForCommandMerge) (string, bool) {
+	if _, err := os.Stat(opts.Input); os.IsNotExist(err) {
+		return "Input file/folder not found", false
+	}
+
+	if opts.RefineMode == "" {
+		return "refine-mode should be either ADD or REPLACE", false
+	}
+
+	return "", true
+}
+
+func mainCommandVerifyLas(args []string, cmd string) {
+	flags := tools.ParseFlagsForCommandVerify(args)
+
+	log.Println("flags", tools.FmtJSONString(flags))
+
+	tilerFlags := flags.TilerFlags
+
+	// Put args inside a TilerOptions struct
+	opts := tiler.TilerOptions{
+		Command:                cmd,
+		Input:                  *tilerFlags.Input,
+		Srid:                   *tilerFlags.Srid,
+		EightBitColors:         *tilerFlags.EightBitColors,
+		ZOffset:                *tilerFlags.ZOffset,
+		MaxNumPointsPerNode:    int32(*tilerFlags.MaxNumPts),
+		EnableGeoidZCorrection: *tilerFlags.ZGeoidCorrection,
+		FolderProcessing:       *tilerFlags.FolderProcessing,
+		Recursive:              *tilerFlags.RecursiveFolderProcessing,
+		Algorithm:              tiler.Algorithm(strings.ToUpper(*tilerFlags.Algorithm)),
+		CellMinSize:            *tilerFlags.GridCellMinSize,
+		CellMaxSize:            *tilerFlags.GridCellMaxSize,
+		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+		TilerVerifyOptions: &tiler.TilerVerifyOptions{
+			Output:      "",
+			OffsetBegin: 0,
+			OffsetEnd:   -1,
+		},
+	}
+
+	// Validate TilerOptions
+	if msg, res := validateOptionsForCommandVerify(&opts, &flags); !res {
+		log.Fatal("Error parsing input parameters: " + msg)
+	}
+
+	// Starts the tiler
+	// defer timeTrack(time.Now(), "tiler")
+	fileFinder := tools.NewStandardFileFinder()
+	algorithmManager := std_algorithm_manager.NewAlgorithmManager(&opts)
+	err := pkg.NewTilerVerify(fileFinder, algorithmManager).RunTiler(&opts)
+
+	if err != nil {
+		log.Fatal("Error while tiling: ", err)
+	} else {
+		tools.LogOutput("Conversion Completed")
+	}
+
+}
+
+func validateOptionsForCommandVerify(opts *tiler.TilerOptions, flags *tools.FlagsForCommandVerify) (string, bool) {
 	if _, err := os.Stat(opts.Input); os.IsNotExist(err) {
 		return "Input file/folder not found", false
 	}

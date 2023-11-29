@@ -57,9 +57,10 @@ type TilerOptions struct {
 	CellMinSize            float64    // Min cell size for grid algorithm
 	RefineMode             RefineMode // Refine mode to use to generate the tileset
 
-	Command           string
-	TilerIndexOptions *TilerIndexOptions
-	TilerMergeOptions *TilerMergeOptions
+	Command            string
+	TilerIndexOptions  *TilerIndexOptions
+	TilerMergeOptions  *TilerMergeOptions
+	TilerVerifyOptions *TilerVerifyOptions
 }
 
 type TilerIndexOptions struct {
@@ -68,6 +69,12 @@ type TilerIndexOptions struct {
 
 type TilerMergeOptions struct {
 	Output string // Output Cesium Tileset folder
+}
+
+type TilerVerifyOptions struct {
+	Output      string // Output Cesium Tileset folder
+	OffsetBegin int64
+	OffsetEnd   int64
 }
 
 func (opt *TilerOptions) Copy() *TilerOptions {
@@ -96,6 +103,11 @@ func (opt *TilerOptions) Copy() *TilerOptions {
 	}
 
 	if opt.TilerMergeOptions != nil {
+		mergeOpt := *opt.TilerMergeOptions
+		newOpt.TilerMergeOptions = &mergeOpt
+	}
+
+	if opt.TilerVerifyOptions != nil {
 		mergeOpt := *opt.TilerMergeOptions
 		newOpt.TilerMergeOptions = &mergeOpt
 	}

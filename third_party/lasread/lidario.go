@@ -756,7 +756,7 @@ func (las *LasFile) readPoints() error {
 				}
 				// log.Println(tools.FmtJSONString(p))
 				if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-					log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 					continue
 				}
 			}
@@ -1240,7 +1240,7 @@ func (las *LasFile) write() error {
 					p = las.pointData[i]
 
 					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-						log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 						continue
 					}
 
@@ -1315,7 +1315,7 @@ func (las *LasFile) write() error {
 						pOffset += 4
 
 						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
-							log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
 							continue
 						}
 					}

@@ -9,6 +9,7 @@ const (
 	CommandIndex         = "index"
 	CommandMergeChildren = "merge-children"
 	CommandMergeTree     = "merge-tree"
+	CommandVerifyLas     = "verify-las"
 )
 
 type FlagsGlobal struct {
@@ -42,6 +43,13 @@ type FlagsForCommandIndex struct {
 
 type FlagsForCommandMerge struct {
 	TilerFlags
+}
+
+type FlagsForCommandVerify struct {
+	TilerFlags
+	Output      *string
+	OffsetBegin *int
+	OffsetEnd   *int
 }
 
 func ParseFlagsGlobal() FlagsGlobal {
@@ -143,6 +151,53 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                &refineMode,
 		},
+	}
+}
+
+func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
+	log.Println(FmtJSONString(args))
+
+	flagCommand := flag.NewFlagSet("command-verify", flag.ExitOnError)
+
+	input := defineStringFlagCommand(flagCommand, "input", "i", "", "Specifies the input tileset parent folder.")
+	output := defineStringFlagCommand(flagCommand, "output", "o", "", "Specifies the output folder where to write the tileset data.")
+	srid := defineIntFlagCommand(flagCommand, "srid", "e", 4326, "EPSG srid code of input points.")
+	eightBit := defineBoolFlagCommand(flagCommand, "8bit", "b", false, "Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)")
+	zOffset := defineFloat64FlagCommand(flagCommand, "zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
+	zGeoidCorrection := defineBoolFlagCommand(flagCommand, "geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
+	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
+	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 10.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
+	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
+
+	offsetBegin := 0
+	offsetEnd := -1
+
+	folderProcessing := true
+
+	maxNumPointsPerNode := 50000
+	algorithm := "grid"
+	refineMode := "REPLACE"
+
+	flagCommand.Parse(args)
+
+	return FlagsForCommandVerify{
+		TilerFlags: TilerFlags{
+			Input:                     input,
+			Srid:                      srid,
+			EightBitColors:            eightBit,
+			ZOffset:                   zOffset,
+			MaxNumPts:                 &maxNumPointsPerNode,
+			ZGeoidCorrection:          zGeoidCorrection,
+			FolderProcessing:          &folderProcessing,
+			RecursiveFolderProcessing: recursiveFolderProcessing,
+			Algorithm:                 &algorithm,
+			GridCellMaxSize:           gridCellMaxSize,
+			GridCellMinSize:           gridCellMinSize,
+			RefineMode:                &refineMode,
+		},
+		Output:      output,
+		OffsetBegin: &offsetBegin,
+		OffsetEnd:   &offsetEnd,
 	}
 }
 
