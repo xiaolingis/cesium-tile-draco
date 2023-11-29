@@ -112,6 +112,8 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 	if err = las.readHeader(); err != nil {
 		return err
 	}
+	las.PrintHeaderXYZ()
+
 	if err := las.readVLRs(); err != nil {
 		return err
 	}
@@ -195,6 +197,11 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 			for i := pointSt; i <= pointEnd; i++ {
 				offset = i * las.Header.PointRecordLength
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
+				if !las.CheckPointXYZInvalid(X, Y, Z) {
+					log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+					continue
+				}
+
 				pointExtend := &data.PointExtend{
 					LasPointIndex: i,
 				}

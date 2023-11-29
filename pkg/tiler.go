@@ -203,8 +203,12 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 		log.Println(err)
 		log.Fatal(err)
 	}
-
 	defer func() { newLf.Close() }()
+
+	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
+		log.Println(err)
+		log.Fatal(err)
+	}
 
 	progress := 0
 	oldProgress := -1
@@ -225,6 +229,12 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 			return err
 		}
 
+		X, Y, Z := pointLas.PointData().X, pointLas.PointData().Y, pointLas.PointData().Z
+		if !lasFile.CheckPointXYZInvalid(X, Y, Z) {
+			log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			continue
+		}
+
 		newLf.AddLasPoint(pointLas)
 
 		// print export-progress
@@ -236,6 +246,8 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 			}
 		}
 	}
+
+	log.Println("Write las file success.", newFileName)
 
 	return nil
 }

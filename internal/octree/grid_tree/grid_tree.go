@@ -2,6 +2,7 @@ package grid_tree
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"runtime"
 	"sync"
@@ -96,6 +97,11 @@ func (tree *GridTree) getPointFromRawData(
 	pointExtend *data.PointExtend,
 ) *data.Point {
 	wgs84coords, err := tree.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
+	if err != nil {
+		log.Println(err)
+		log.Fatal(err)
+	}
+
 	z := tree.elevationCorrector.CorrectElevation(wgs84coords.X, wgs84coords.Y, wgs84coords.Z)
 
 	worldMercatorCoords, err := tree.coordinateConverter.ConvertCoordinateSrid(
@@ -109,6 +115,8 @@ func (tree *GridTree) getPointFromRawData(
 	)
 
 	if err != nil {
+		log.Println(err, fmt.Sprintf("srid:[%d] coordinate:[%s]", srid, tools.FmtJSONString(coordinate)))
+		log.Println(err, fmt.Sprintf("X:[%f] Y:[%f] Z:[%f]", coordinate.X, coordinate.Y, z))
 		log.Fatal(err)
 	}
 
@@ -126,16 +134,16 @@ func (tree *GridTree) GetBounds() []float64 {
 	minX, maxX, minY, maxY, minZ, maxZ := box[0], box[1], box[2], box[3], box[4], box[5]
 
 	if tools.IsFloatEqual(minX, maxX) {
-		minX -= 0.0001
-		maxX += 0.0001
+		minX -= 0.001
+		maxX += 0.001
 	}
 	if tools.IsFloatEqual(minY, maxY) {
-		minY -= 0.0001
-		maxY += 0.0001
+		minY -= 0.001
+		maxY += 0.001
 	}
 	if tools.IsFloatEqual(minZ, maxZ) {
-		minZ -= 0.0001
-		maxZ += 0.0001
+		minZ -= 0.001
+		maxZ += 0.001
 	}
 
 	return []float64{minX, maxX, minY, maxY, minZ, maxZ}

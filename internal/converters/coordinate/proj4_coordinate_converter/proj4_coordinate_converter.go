@@ -3,15 +3,16 @@ package proj4_coordinate_converter
 import (
 	"bufio"
 	"errors"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
-	"github.com/xeonx/proj4"
 	"log"
 	"math"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
+	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/mfbonfigli/gocesiumtiler/tools"
+	proj "github.com/xeonx/proj4"
 )
 
 const toRadians = math.Pi / 180
@@ -80,11 +81,13 @@ func (cc *proj4CoordinateConverter) ConvertCoordinateSrid(sourceSrid int, target
 
 	src, err := cc.initProjection(sourceSrid)
 	if err != nil {
+		log.Println(err)
 		return coord, err
 	}
 
 	dst, err := cc.initProjection(targetSrid)
 	if err != nil {
+		log.Println(err)
 		return coord, err
 	}
 
@@ -109,14 +112,16 @@ func (cc *proj4CoordinateConverter) Convert2DBoundingboxToWGS84Region(bbox *geom
 	}
 	w84lc, err := cc.ConvertCoordinateSrid(srid, 4326, projLowCorn)
 	if err != nil {
+		log.Println(err)
 		return nil, nil
 	}
 	w84uc, err := cc.ConvertCoordinateSrid(srid, 4326, projUppCorn)
 	if err != nil {
+		log.Println(err)
 		return nil, nil
 	}
 
-	return geometry.NewBoundingBox(w84lc.X * toRadians, w84lc.Y * toRadians, w84uc.X * toRadians, w84uc.Y * toRadians, bbox.Zmin, bbox.Zmax), nil
+	return geometry.NewBoundingBox(w84lc.X*toRadians, w84lc.Y*toRadians, w84uc.X*toRadians, w84uc.Y*toRadians, bbox.Zmin, bbox.Zmax), nil
 }
 
 // Converts the input coordinate from the given srid to EPSG:4326 srid
@@ -127,6 +132,7 @@ func (cc *proj4CoordinateConverter) ConvertToWGS84Cartesian(coord geometry.Coord
 
 	res, err := cc.ConvertCoordinateSrid(sourceSrid, 4326, coord)
 	if err != nil {
+		log.Println(err)
 		return coord, err
 	}
 	res2, err := cc.ConvertCoordinateSrid(4329, 4978, res)

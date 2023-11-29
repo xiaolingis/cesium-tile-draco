@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 	"strconv"
 	"strings"
@@ -159,6 +160,7 @@ func (c *StandardConsumer) generateIntermediateDataForPnts(node octree.INode) (*
 		// ConvertCoordinateSrid coords according to cesium CRS
 		outCrd, err := c.coordinateConverter.ConvertToWGS84Cartesian(srcCoord, node.GetInternalSrid())
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 

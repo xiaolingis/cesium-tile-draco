@@ -303,6 +303,12 @@ func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFi
 	}
 	defer newLf.Close()
 
+	if err := newLf.CopyHeaderXYZ(lf.Header); err != nil {
+		log.Println(err)
+		log.Fatal(err)
+		return "", err
+	}
+
 	for i, filePath := range lasFilePathList {
 		log.Printf("mergeLasFileList %d/%d %s", i+1, len(lasFilePathList), filePath)
 		lf, err := lidario.NewLasFile(filePath, "r")
@@ -311,8 +317,13 @@ func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFi
 			log.Fatal(err)
 			return "", err
 		}
-
 		defer lf.Close()
+
+		if err := newLf.MergeHeaderXYZ(lf.Header); err != nil {
+			log.Println(err)
+			log.Fatal(err)
+			return "", err
+		}
 
 		for i := 0; i < int(lf.Header.NumberPoints); i++ {
 			p, err := lf.LasPoint(i)
@@ -536,6 +547,11 @@ func (tiler *TilerMerge) exportRootNodeLas(octree octree.ITree, opts *tiler.Tile
 		log.Fatal(err)
 	}
 	defer func() { newLf.Close() }()
+
+	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
+		log.Println(err)
+		log.Fatal(err)
+	}
 
 	progress := 0
 	oldProgress := -1

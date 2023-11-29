@@ -141,6 +141,74 @@ func (las *LasFile) AddHeader(header LasHeader) error {
 	return nil
 }
 
+// CopyHeaderXYZ adds a header to a LasFile created in 'w' (write) mode. The method is thread-safe.
+func (las *LasFile) CopyHeaderXYZ(header LasHeader) error {
+	las.Lock()
+	// defer las.Unlock()
+	if las.fileMode == "r" || las.fileMode == "rh" {
+		las.Unlock()
+		return fmt.Errorf("file has been opened in %v mode; AddHeader can only be used in 'w' mode", las.fileMode)
+	}
+
+	// These must be set by the data
+	las.Header.MinX = header.MinX
+	las.Header.MaxX = header.MaxX
+	las.Header.MinY = header.MinY
+	las.Header.MaxY = header.MaxY
+	las.Header.MinZ = header.MinZ
+	las.Header.MaxZ = header.MaxZ
+
+	las.Header.XOffset = las.Header.MinX
+	las.Header.YOffset = las.Header.MinY
+	las.Header.ZOffset = las.Header.MinZ
+
+	las.Header.SystemID = fixedLengthString("GoSpatial by Cooper", 32)
+	las.Header.GeneratingSoftware = fixedLengthString("GoSpatial by Cooper", 32)
+
+	las.Header.XScaleFactor = header.XScaleFactor
+	las.Header.YScaleFactor = header.YScaleFactor
+	las.Header.ZScaleFactor = header.ZScaleFactor
+
+	las.headerIsSet = true
+
+	las.Unlock()
+	return nil
+}
+
+// CopyHeaderXYZ adds a header to a LasFile created in 'w' (write) mode. The method is thread-safe.
+func (las *LasFile) MergeHeaderXYZ(header LasHeader) error {
+	las.Lock()
+	// defer las.Unlock()
+	if las.fileMode == "r" || las.fileMode == "rh" {
+		las.Unlock()
+		return fmt.Errorf("file has been opened in %v mode; AddHeader can only be used in 'w' mode", las.fileMode)
+	}
+
+	// These must be set by the data
+	las.Header.MinX = math.Min(header.MinX, las.Header.MinX)
+	las.Header.MaxX = math.Max(header.MaxX, las.Header.MaxX)
+	las.Header.MinY = math.Min(header.MinY, las.Header.MinY)
+	las.Header.MaxY = math.Max(header.MaxY, las.Header.MaxY)
+	las.Header.MinZ = math.Min(header.MinZ, las.Header.MinZ)
+	las.Header.MaxZ = math.Max(header.MaxZ, las.Header.MaxZ)
+
+	las.Header.XOffset = las.Header.MinX
+	las.Header.YOffset = las.Header.MinY
+	las.Header.ZOffset = las.Header.MinZ
+
+	las.Header.SystemID = fixedLengthString("GoSpatial by Cooper", 32)
+	las.Header.GeneratingSoftware = fixedLengthString("GoSpatial by Cooper", 32)
+
+	las.Header.XScaleFactor = math.Min(header.XScaleFactor, las.Header.XScaleFactor)
+	las.Header.YScaleFactor = math.Min(header.YScaleFactor, las.Header.YScaleFactor)
+	las.Header.ZScaleFactor = math.Min(header.ZScaleFactor, las.Header.ZScaleFactor)
+
+	las.headerIsSet = true
+
+	las.Unlock()
+	return nil
+}
+
 // AddVLR adds a variable length record (VLR) to a LAS file created in 'w' (write) mode. The method is thread-safe.
 func (las *LasFile) AddVLR(vlr VLR) error {
 	las.Lock()
@@ -221,6 +289,20 @@ func (las *LasFile) AddLasPoint(p LasPointer) error {
 	las.Header.NumberPoints++
 	las.Unlock()
 	return nil
+}
+
+func (las *LasFile) CheckPointXYZInvalid(x, y, z float64) bool {
+	header := las.Header
+	if x < header.MinX || x > header.MaxX {
+		return false
+	}
+	if y < header.MinY || y > header.MaxY {
+		return false
+	}
+	if z < header.MinZ || z > header.MaxZ {
+		return false
+	}
+	return true
 }
 
 // AddLasPoints adds a slice of data record to a Las file created in 'w' (write) mode. The method is thread-safe.
@@ -370,6 +452,8 @@ func (las *LasFile) read() error {
 	if err = las.readHeader(); err != nil {
 		return err
 	}
+	las.PrintHeaderXYZ()
+
 	if err := las.readVLRs(); err != nil {
 		return err
 	}
@@ -513,6 +597,13 @@ func (las *LasFile) readHeader() error {
 		}
 	}
 	return nil
+}
+
+func (las *LasFile) PrintHeaderXYZ() {
+	header := las.Header
+	log.Printf("NumberPoints[%d] PointFormatID[%d] MinX[%f] MinY[%f] MinZ[%f] MaxX[%f] MaxY[%f] MaxZ[%f]",
+		header.NumberPoints, header.PointFormatID,
+		header.MinX, header.MinY, header.MinZ, header.MaxX, header.MaxY, header.MaxZ)
 }
 
 func (las *LasFile) readVLRs() error {
@@ -664,6 +755,10 @@ func (las *LasFile) readPoints() error {
 					// log.Println(tools.FmtJSONString(rgb))
 				}
 				// log.Println(tools.FmtJSONString(p))
+				if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
+					log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					continue
+				}
 			}
 		}(startingPoint, endingPoint)
 		startingPoint = endingPoint + 1
@@ -1144,6 +1239,11 @@ func (las *LasFile) write() error {
 				for i := pointSt; i <= pointEnd; i++ {
 					p = las.pointData[i]
 
+					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
+						log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						continue
+					}
+
 					offset = i * las.Header.PointRecordLength
 
 					val = int32((p.X - las.Header.XOffset) / las.Header.XScaleFactor)
@@ -1204,6 +1304,21 @@ func (las *LasFile) write() error {
 					b[offset] = b2[0]
 					b[offset+1] = b2[1]
 					offset += 2
+
+					if true {
+						pOffset := i * las.Header.PointRecordLength
+						pX := float64(int32(binary.LittleEndian.Uint32(b[pOffset:pOffset+4])))*las.Header.XScaleFactor + las.Header.XOffset
+						pOffset += 4
+						pY := float64(int32(binary.LittleEndian.Uint32(b[pOffset:pOffset+4])))*las.Header.YScaleFactor + las.Header.YOffset
+						pOffset += 4
+						pZ := float64(int32(binary.LittleEndian.Uint32(b[pOffset:pOffset+4])))*las.Header.ZScaleFactor + las.Header.ZOffset
+						pOffset += 4
+
+						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
+							log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							continue
+						}
+					}
 
 					// p = las.pointData[i]
 					// buf := new(bytes.Buffer)
