@@ -30,11 +30,18 @@ type GridNode struct {
 	numberOfPoints      int32
 	leaf                int32
 	initialized         bool
+	extend              *GridNodeExtend
+
 	sync.RWMutex
+}
+
+type GridNodeExtend struct {
+	tree *GridTree
 }
 
 // Instantiates a new GridNode
 func NewGridNode(
+	tree *GridTree,
 	parent octree.INode,
 	boundingBox *geometry.BoundingBox,
 	maxCellSize float64,
@@ -53,6 +60,9 @@ func NewGridNode(
 		numberOfPoints:      0,                                // number of points stored in this node (children excluded)
 		leaf:                1,                                // 1 if is a leaf, 0 otherwise
 		initialized:         false,                            // flag to see if the node has been initialized
+		extend: &GridNodeExtend{
+			tree: tree,
+		},
 	}
 
 	return &node
@@ -99,6 +109,10 @@ func (n *GridNode) GetBoundingBox() *geometry.BoundingBox {
 	return n.boundingBox
 }
 
+func (n *GridNode) GetCellSize() float64 {
+	return n.cellSize
+}
+
 func (n *GridNode) GetChildren() [8]octree.INode {
 	return n.children
 }
@@ -129,14 +143,33 @@ func (n *GridNode) IsRoot() bool {
 
 // Computes the geometric error for the given GridNode
 func (n *GridNode) ComputeGeometricError() float64 {
-	if n.IsRoot() {
-		var w = math.Abs(n.boundingBox.Xmax - n.boundingBox.Xmin)
-		var l = math.Abs(n.boundingBox.Ymax - n.boundingBox.Ymin)
-		var h = math.Abs(n.boundingBox.Zmax - n.boundingBox.Zmin)
-		return math.Sqrt(w*w + l*l + h*h)
+	treeExtend := n.extend.tree.extend
+
+	if !treeExtend.useEdgeCalculateGeometricError {
+
+		if n.IsRoot() {
+			var w = math.Abs(n.boundingBox.Xmax - n.boundingBox.Xmin)
+			var l = math.Abs(n.boundingBox.Ymax - n.boundingBox.Ymin)
+			var h = math.Abs(n.boundingBox.Zmax - n.boundingBox.Zmin)
+			return math.Sqrt(w*w + l*l + h*h)
+		}
+
+		// geometric error is estimated as the maximum possible distance between two points lying in the cell
+		return n.cellSize * math.Sqrt(3) * 2
+
+	} else {
+
+		w := treeExtend.chunkEdgeX
+		l := treeExtend.chunkEdgeY
+		h := treeExtend.chunkEdgeZ
+		diagonal := math.Sqrt(w*w + l*l + h*h)
+
+		rootCellSize := n.extend.tree.rootNode.(*GridNode).GetCellSize()
+		scale := float64(8)
+
+		return n.cellSize / rootCellSize * diagonal / scale
 	}
-	// geometric error is estimated as the maximum possible distance between two points lying in the cell
-	return n.cellSize * math.Sqrt(3) * 2
+
 }
 
 // Returns the index of the octant that contains the given Point within this boundingBox
@@ -248,6 +281,7 @@ func (n *GridNode) initializeChildren() {
 	for i := uint8(0); i < 8; i++ {
 		if n.children[i] == nil {
 			n.children[i] = NewGridNode(
+				n.extend.tree,
 				n,
 				getOctantBoundingBox(&i, n.boundingBox),
 				n.cellSize/2.0,

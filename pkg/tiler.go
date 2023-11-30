@@ -13,6 +13,7 @@ import (
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/io"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
 	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
@@ -91,6 +92,15 @@ func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree 
 		log.Fatal(err)
 		return nil, err
 	}
+
+	lasFile := lasFileLoader.LasFile
+
+	edgeX := lasFile.Header.MaxX - lasFile.Header.MinX
+	edgeY := lasFile.Header.MaxY - lasFile.Header.MinY
+	edgeZ := lasFile.Header.MaxZ - lasFile.Header.MinZ
+	useEdgeCalculateGeometricError := opts.TilerIndexOptions.UseEdgeCalculateGeometricError
+
+	tree.(*grid_tree.GridTree).UpdateExtendChunkEdge(edgeX, edgeY, edgeZ, useEdgeCalculateGeometricError)
 
 	return lasFileLoader, nil
 }

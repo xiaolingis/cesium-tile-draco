@@ -126,7 +126,8 @@ func mainCommandIndex(args []string) {
 
 		Command: tools.CommandIndex,
 		TilerIndexOptions: &tiler.TilerIndexOptions{
-			Output: *flags.Output,
+			Output:                         *flags.Output,
+			UseEdgeCalculateGeometricError: *flags.UseEdgeCalculateGeometricError,
 		},
 	}
 

@@ -64,7 +64,8 @@ type TilerOptions struct {
 }
 
 type TilerIndexOptions struct {
-	Output string // Output Cesium Tileset folder
+	Output                         string // Output Cesium Tileset folder
+	UseEdgeCalculateGeometricError bool
 }
 
 type TilerMergeOptions struct {

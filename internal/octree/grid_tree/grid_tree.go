@@ -29,6 +29,16 @@ type GridTree struct {
 	elevationCorrector  converters.ElevationCorrector
 	point_loader.Loader
 	sync.RWMutex
+
+	// Extend
+	extend *GridTreeExtend
+}
+
+type GridTreeExtend struct {
+	chunkEdgeX                     float64
+	chunkEdgeY                     float64
+	chunkEdgeZ                     float64
+	useEdgeCalculateGeometricError bool
 }
 
 // Builds an empty GridTree initializing its properties to the correct defaults
@@ -45,6 +55,11 @@ func NewGridTree(
 		Loader:              point_loader.NewSequentialLoader(),
 		coordinateConverter: coordinateConverter,
 		elevationCorrector:  elevationCorrector,
+		extend: &GridTreeExtend{
+			chunkEdgeX: 0,
+			chunkEdgeY: 0,
+			chunkEdgeZ: 0,
+		},
 	}
 }
 
@@ -129,6 +144,10 @@ func (tree *GridTree) getPointFromRawData(
 	)
 }
 
+func (tree *GridTree) GetTreeExtend() *GridTreeExtend {
+	return tree.extend
+}
+
 func (tree *GridTree) GetBounds() []float64 {
 	box := tree.Loader.GetBounds()
 	minX, maxX, minY, maxY, minZ, maxZ := box[0], box[1], box[2], box[3], box[4], box[5]
@@ -157,6 +176,7 @@ func (tree *GridTree) init() {
 	log.Println("x-diff:", box[1]-box[0], ", y-diff:", box[3]-box[2], ", z-diff:", box[5]-box[4])
 
 	node := NewGridNode(
+		tree,
 		nil,
 		geometry.NewBoundingBox(box[0], box[1], box[2], box[3], box[4], box[5]),
 		tree.maxCellSize,
@@ -192,4 +212,11 @@ func (tree *GridTree) launchPointLoader(waitGroup *sync.WaitGroup) {
 		}
 	}
 	waitGroup.Done()
+}
+
+func (tree *GridTree) UpdateExtendChunkEdge(chunkEdgeX, chunkEdgeY, chunkEdgeZ float64, useEdgeCalculateGeometricError bool) {
+	tree.extend.chunkEdgeX = chunkEdgeX
+	tree.extend.chunkEdgeY = chunkEdgeY
+	tree.extend.chunkEdgeZ = chunkEdgeZ
+	tree.extend.useEdgeCalculateGeometricError = useEdgeCalculateGeometricError
 }

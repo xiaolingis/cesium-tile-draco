@@ -35,11 +35,12 @@ type TilerFlags struct {
 
 type FlagsForCommandIndex struct {
 	TilerFlags
-	Output       *string
-	Silent       *bool
-	LogTimestamp *bool
-	Help         *bool
-	Version      *bool
+	Output                         *string
+	UseEdgeCalculateGeometricError *bool
+	Silent                         *bool
+	LogTimestamp                   *bool
+	Help                           *bool
+	Version                        *bool
 }
 
 type FlagsForCommandMerge struct {
@@ -82,6 +83,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 0.15, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
 
+	useEdgeCalculateGeometricError := defineBoolFlagCommand(flagCommand, "use-edge-calculate", "d", true, "Assumes use chunk-edge x/y/z to calculate tileset geometricError")
 	silent := defineBoolFlagCommand(flagCommand, "silent", "s", false, "Use to suppress all the non-error messages.")
 	logTimestamp := defineBoolFlagCommand(flagCommand, "timestamp", "t", false, "Adds timestamp to log messages.")
 	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
@@ -107,11 +109,12 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                refineMode,
 		},
-		Output:       output,
-		Silent:       silent,
-		LogTimestamp: logTimestamp,
-		Help:         help,
-		Version:      version,
+		Output:                         output,
+		UseEdgeCalculateGeometricError: useEdgeCalculateGeometricError,
+		Silent:                         silent,
+		LogTimestamp:                   logTimestamp,
+		Help:                           help,
+		Version:                        version,
 	}
 }
 
