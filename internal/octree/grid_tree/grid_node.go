@@ -165,7 +165,7 @@ func (n *GridNode) ComputeGeometricError() float64 {
 		diagonal := math.Sqrt(w*w + l*l + h*h)
 
 		rootCellSize := n.extend.tree.rootNode.(*GridNode).GetCellSize()
-		scale := float64(8)
+		scale := float64(32) // match js.tilesetMaxScreenSpaceError = 16
 
 		return n.cellSize / rootCellSize * diagonal / scale
 	}
