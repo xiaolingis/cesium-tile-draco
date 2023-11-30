@@ -188,7 +188,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	if blockSize == 0 {
 		blockSize = 1
 	}
-	blockSize = 100000000
+	// blockSize = 100000000
 
 	var startingPoint int
 	cpuThread := 1
@@ -217,8 +217,8 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 					LasPointIndex: i,
 				}
 
-				// log.Printf("point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
-				// log.Println("las_file_reader point", X, Y, Z, R, G, B, Intensity, Classification)
+				// log.Printf(" oooooo point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+				// log.Println(" oooooo las_file_reader point", X, Y, Z, R, G, B, Intensity, Classification)
 				lasFileLoader.Tree.AddPoint(
 					&geometry.Coordinate{X: X, Y: Y, Z: Z},
 					R, G, B,

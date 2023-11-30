@@ -142,6 +142,11 @@ func (las *LasFile) AddHeader(header LasHeader) error {
 	las.Header.VersionMajor = 1
 	las.Header.VersionMinor = 3
 
+	las.Header.NumberPoints = 0
+	for i := range las.Header.NumberPointsByReturn {
+		las.Header.NumberPointsByReturn[i] = 0
+	}
+
 	// These must be set by the data
 	las.Header.MinX = math.Inf(0)
 	las.Header.MaxX = math.Inf(-1)
@@ -201,7 +206,7 @@ func (las *LasFile) CopyHeaderXYZ(header LasHeader) error {
 	return nil
 }
 
-// CopyHeaderXYZ adds a header to a LasFile created in 'w' (write) mode. The method is thread-safe.
+// MergeHeaderXYZ adds a header to a LasFile created in 'w' (write) mode. The method is thread-safe.
 func (las *LasFile) MergeHeaderXYZ(header LasHeader) error {
 	las.Lock()
 	// defer las.Unlock()
@@ -414,7 +419,9 @@ func (las *LasFile) Close() error {
 		return errors.New("the LAS reader is nil")
 	}
 	if las.fileMode == "w" {
-		las.write()
+		if err := las.write(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err := las.f.Close(); err != nil {
@@ -544,7 +551,7 @@ func (las *LasFile) readHeader() error {
 		las.Header.projectIDUsed = false
 	}
 	var offset uint
-	las.Header.FileSignature = string(b[offset : offset+4])
+	las.Header.FileSignature = bytesToString(b[offset:offset+4], 4)
 	offset += 4
 	las.Header.FileSourceID = int(binary.LittleEndian.Uint16(b[offset : offset+2]))
 	offset += 2
@@ -565,11 +572,11 @@ func (las *LasFile) readHeader() error {
 	// The version major and minor are read earlier.
 	// Two bytes must be added to the offset here.
 	offset += 2
-	las.Header.SystemID = string(b[offset : offset+32])
+	las.Header.SystemID = bytesToString(b[offset:offset+32], 32)
 	las.Header.SystemID = strings.Trim(las.Header.SystemID, " ")
 	las.Header.SystemID = strings.Trim(las.Header.SystemID, "\x00")
 	offset += 32
-	las.Header.GeneratingSoftware = string(b[offset : offset+32])
+	las.Header.GeneratingSoftware = bytesToString(b[offset:offset+32], 32)
 	las.Header.GeneratingSoftware = strings.Trim(las.Header.GeneratingSoftware, " ")
 	las.Header.GeneratingSoftware = strings.Trim(las.Header.GeneratingSoftware, "\x00")
 	offset += 32
@@ -590,6 +597,12 @@ func (las *LasFile) readHeader() error {
 	// this might be zero, it's a legacy field in LAS 1.4
 	las.Header.NumberPoints = int(binary.LittleEndian.Uint32(b[offset : offset+4]))
 	offset += 4
+
+	// // Debug las-v1.3-read-write
+	// if las.Header.NumberPoints > 6 {
+	// 	las.Header.NumberPoints = 3
+	// }
+
 	for i := 0; i < 5; i++ {
 		// this might be zero, it's a legacy field in LAS 1.4
 		las.Header.NumberPointsByReturn[i] = int(binary.LittleEndian.Uint32(b[offset : offset+4]))
@@ -675,7 +688,7 @@ func (las *LasFile) readVLRs() error {
 		vlr := VLR{}
 		vlr.Reserved = int(binary.LittleEndian.Uint16(b[offset : offset+2]))
 		offset += 2
-		vlr.UserID = string(b[offset : offset+16])
+		vlr.UserID = bytesToString(b[offset:offset+16], 16)
 		vlr.UserID = strings.Trim(vlr.UserID, " ")
 		vlr.UserID = strings.Trim(vlr.UserID, "\x00")
 		offset += 16
@@ -683,7 +696,7 @@ func (las *LasFile) readVLRs() error {
 		offset += 2
 		vlr.RecordLengthAfterHeader = int(binary.LittleEndian.Uint16(b[offset : offset+2]))
 		offset += 2
-		vlr.Description = string(b[offset : offset+32])
+		vlr.Description = bytesToString(b[offset:offset+32], 32)
 		vlr.Description = strings.Trim(vlr.Description, " ")
 		vlr.Description = strings.Trim(vlr.Description, "\x00")
 		offset += 32
@@ -704,6 +717,7 @@ func (las *LasFile) readVLRs() error {
 			las.geokeys.addASCIIParams(vlr.BinaryData)
 		}
 		las.VlrData[i] = vlr
+		// log.Println(vlr.String())
 	}
 
 	return nil
@@ -753,7 +767,7 @@ func (las *LasFile) readPoints() error {
 	if blockSize == 0 {
 		blockSize = 1
 	}
-	blockSize = 100000000
+	// blockSize = 100000000
 
 	var startingPoint int
 	cpuThread := 1
@@ -789,7 +803,7 @@ func (las *LasFile) readPoints() error {
 				p.Z = float64(zVal)*las.Header.ZScaleFactor + las.Header.ZOffset
 				offset += 4
 
-				log.Printf(" << read point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
+				// log.Printf(" << read point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
 
 				if las.usePointIntensity {
 					p.Intensity = binary.LittleEndian.Uint16(b[offset : offset+2])
@@ -831,7 +845,7 @@ func (las *LasFile) readPoints() error {
 					log.Fatal("invalid point X/Y/Z")
 					continue
 				}
-				log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+				// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 				// log.Println("verify deserialize success.")
 			}
 		}(startingPoint, endingPoint, cpuThread)
@@ -1066,6 +1080,7 @@ func (las *LasFile) write() error {
 		binary.LittleEndian.PutUint16(bytes2, uint16(vlr.RecordLengthAfterHeader))
 		w.Write(bytes2)
 
+		// log.Printf("vlr.Desc.len[%d] [%s]", len(vlr.Description), vlr.Description)
 		w.WriteString(fixedLengthString(vlr.Description, 32))
 
 		w.Write(vlr.BinaryData)
@@ -1082,7 +1097,7 @@ func (las *LasFile) write() error {
 	if blockSize == 0 {
 		blockSize = 1
 	}
-	blockSize = 100000000
+	// blockSize = 100000000
 
 	var startingPoint int
 	cpuThread := 1
@@ -1356,7 +1371,7 @@ func (las *LasFile) write() error {
 						log.Fatal("invalid point X/Y/Z")
 						continue
 					}
-					log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 
 					offset = i * las.Header.PointRecordLength
 
@@ -1390,7 +1405,7 @@ func (las *LasFile) write() error {
 					b[offset+3] = b4[3]
 					offset += 4
 
-					log.Printf(" >> write point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
+					// log.Printf(" >> write point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
 
 					if las.usePointIntensity {
 						binary.LittleEndian.PutUint16(b2, p.Intensity)
@@ -1441,8 +1456,8 @@ func (las *LasFile) write() error {
 							log.Fatal("invalid point X/Y/Z")
 							continue
 						}
-						log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-						log.Println("verify serialize success.")
+						// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+						// log.Println("verify serialize success.")
 					}
 
 					// p = las.pointData[i]
@@ -1676,8 +1691,16 @@ func (las *LasFile) write() error {
 	}
 
 	wg.Wait()
-	w.Write(b)
-	w.Flush()
+
+	if nSize, err := w.Write(b); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println("write nSize:", nSize)
+	}
+
+	if err := w.Flush(); err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
@@ -2284,8 +2307,20 @@ func fixedLengthString(s string, length int) string {
 		if n < len(s) && n < length {
 			b.WriteString(string(s[n]))
 		} else {
-			b.WriteString("\x00")
+			b.WriteByte(byte(0))
 		}
 	}
 	return b.String()
+}
+
+func bytesToString(bs []byte, maxLength int) string {
+	for idx, c := range bs {
+		if idx >= maxLength {
+			return string(bs[:idx-1])
+		}
+		if c == 0 {
+			return string(bs[:idx])
+		}
+	}
+	return string(bs)
 }
