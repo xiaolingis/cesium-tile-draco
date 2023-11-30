@@ -34,10 +34,16 @@ func (tiler *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
 		}
 	} else if opts.Command == tools.CommandVerifyLasMerge {
 		lasFilePathList := []string{
-			// "./las/10009-7-58-40-0.las",
 			// "./las/10009-6-29-20-1.las",
+			// "./las/10009-7-58-40-0.las",
+			// "./las/10009-8-117-87-2.las",
+			// "./las/10009-7-57-41-1.las",
+			// "tileset-las1/chunk-tileset-10009-6-29-20-1/content.las",
+			"tileset-las1/chunk-tileset-10009-7-58-40-0/content.las",
+			// "tileset-las1/chunk-tileset-10009-8-117-87-2/content.las",
+			// "tileset-las1/chunk-tileset-10009-7-57-41-1/content.las",
 			// "./0/7/7-57-41-1.las",
-			"tileset/0/chunk-tileset-7-57-41-1/content.las",
+			// "tileset/0/chunk-tileset-7-57-41-1/content.las",
 		}
 		mergedLasFilePath, err := tiler.mergeLasFileListCheck(lasFilePathList)
 		if err != nil {
@@ -123,12 +129,12 @@ func (tiler *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerO
 
 		X, Y, Z := pointLas.PointData().X, pointLas.PointData().Y, pointLas.PointData().Z
 		if !lasFile.CheckPointXYZInvalid(X, Y, Z) {
-			log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
 			continue
 		}
 
 		if i < 10 {
-			log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
 		}
 
 	}

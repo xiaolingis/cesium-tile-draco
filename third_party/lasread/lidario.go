@@ -80,8 +80,6 @@ func InitializeUsingFile(fileName string, other *LasFile) (*LasFile, error) {
 	las := LasFile{}
 	las.fileName = fileName
 	las.fileMode = "w"
-	las.usePointIntensity = true
-	las.usePointUserdata = true
 
 	var err error
 	if las.f, err = os.Create(las.fileName); err != nil {
@@ -89,6 +87,28 @@ func InitializeUsingFile(fileName string, other *LasFile) (*LasFile, error) {
 	}
 
 	las.AddHeader(other.Header)
+
+	// Set las.useXxx flag by other-las
+	recLengths := [4][4]int{{20, 18, 19, 17}, {28, 26, 27, 25}, {26, 24, 25, 23}, {34, 32, 33, 31}}
+	if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][0] {
+		las.usePointIntensity = true
+		las.usePointUserdata = true
+	} else if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][1] {
+		las.usePointIntensity = false
+		las.usePointUserdata = true
+	} else if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][2] {
+		las.usePointIntensity = true
+		las.usePointUserdata = false
+	} else if las.Header.PointRecordLength == recLengths[las.Header.PointFormatID][3] {
+		las.usePointIntensity = false
+		las.usePointUserdata = false
+	}
+
+	log.Printf("init las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+		"userIntensity:[%v] userUserData:[%v]",
+		las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
+		las.Header.PointFormatID, las.Header.PointRecordLength,
+		las.usePointIntensity, las.usePointUserdata)
 
 	// Copy the VLRs
 	for _, vlr := range other.VlrData {
@@ -160,9 +180,13 @@ func (las *LasFile) CopyHeaderXYZ(header LasHeader) error {
 	las.Header.MinZ = header.MinZ
 	las.Header.MaxZ = header.MaxZ
 
-	las.Header.XOffset = las.Header.MinX
-	las.Header.YOffset = las.Header.MinY
-	las.Header.ZOffset = las.Header.MinZ
+	las.Header.XOffset = header.XOffset
+	las.Header.YOffset = header.YOffset
+	las.Header.ZOffset = header.ZOffset
+
+	// las.Header.XOffset = las.Header.MinX
+	// las.Header.YOffset = las.Header.MinY
+	// las.Header.ZOffset = las.Header.MinZ
 
 	las.Header.SystemID = fixedLengthString("GoSpatial by Yupeng", 32)
 	las.Header.GeneratingSoftware = fixedLengthString("GoSpatial by Yupeng", 32)
@@ -194,16 +218,16 @@ func (las *LasFile) MergeHeaderXYZ(header LasHeader) error {
 	las.Header.MinZ = math.Min(header.MinZ, las.Header.MinZ)
 	las.Header.MaxZ = math.Max(header.MaxZ, las.Header.MaxZ)
 
-	las.Header.XOffset = las.Header.MinX
-	las.Header.YOffset = las.Header.MinY
-	las.Header.ZOffset = las.Header.MinZ
+	// las.Header.XOffset = las.Header.MinX
+	// las.Header.YOffset = las.Header.MinY
+	// las.Header.ZOffset = las.Header.MinZ
 
 	las.Header.SystemID = fixedLengthString("GoSpatial by Yupeng", 32)
 	las.Header.GeneratingSoftware = fixedLengthString("GoSpatial by Yupeng", 32)
 
-	las.Header.XScaleFactor = math.Min(header.XScaleFactor, las.Header.XScaleFactor)
-	las.Header.YScaleFactor = math.Min(header.YScaleFactor, las.Header.YScaleFactor)
-	las.Header.ZScaleFactor = math.Min(header.ZScaleFactor, las.Header.ZScaleFactor)
+	// las.Header.XScaleFactor = math.Min(header.XScaleFactor, las.Header.XScaleFactor)
+	// las.Header.YScaleFactor = math.Min(header.YScaleFactor, las.Header.YScaleFactor)
+	// las.Header.ZScaleFactor = math.Min(header.ZScaleFactor, las.Header.ZScaleFactor)
 
 	las.headerIsSet = true
 
@@ -392,7 +416,14 @@ func (las *LasFile) Close() error {
 	if las.fileMode == "w" {
 		las.write()
 	}
-	return las.f.Close()
+
+	if err := las.f.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	las.f = nil
+
+	return nil
 }
 
 // Clear clear a LasFile
@@ -476,9 +507,16 @@ func (las *LasFile) read() error {
 			las.usePointUserdata = false
 		}
 
+		log.Printf("read las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+			"userIntensity:[%v] userUserData:[%v]",
+			las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
+			las.Header.PointFormatID, las.Header.PointRecordLength,
+			las.usePointIntensity, las.usePointUserdata)
+
 		if err := las.readPoints(); err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
@@ -625,6 +663,7 @@ func (las *LasFile) readVLRs() error {
 
 	// Estimate how many bytes are used to store the VLRs
 	vlrLength := las.Header.OffsetToPoints - las.Header.HeaderSize
+
 	b := make([]byte, vlrLength)
 	// if _, err := las.r.ReadAt(b[0:vlrLength], int64(las.Header.HeaderSize)); err != nil && err != io.EOF {
 	if _, err := las.f.ReadAt(b, int64(las.Header.HeaderSize)); err != nil && err != io.EOF {
@@ -729,17 +768,29 @@ func (las *LasFile) readPoints() error {
 			log.Printf("cpu-thread read %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 				threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
+			var xVal, yVal, zVal int32
 			var offset int
 			var p PointRecord0
 			for i := pointSt; i <= pointEnd; i++ {
 				offset = i * las.Header.PointRecordLength
-				// p := PointRecord0{}
-				p.X = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.XScaleFactor + las.Header.XOffset
+
+				//p.X = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.XScaleFactor + las.Header.XOffset
+				xVal = int32(binary.LittleEndian.Uint32(b[offset : offset+4]))
+				p.X = float64(xVal)*las.Header.XScaleFactor + las.Header.XOffset
 				offset += 4
-				p.Y = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.YScaleFactor + las.Header.YOffset
+
+				// p.Y = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.YScaleFactor + las.Header.YOffset
+				yVal = int32(binary.LittleEndian.Uint32(b[offset : offset+4]))
+				p.Y = float64(yVal)*las.Header.YScaleFactor + las.Header.YOffset
 				offset += 4
-				p.Z = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.ZScaleFactor + las.Header.ZOffset
+
+				// p.Z = float64(int32(binary.LittleEndian.Uint32(b[offset:offset+4])))*las.Header.ZScaleFactor + las.Header.ZOffset
+				zVal = int32(binary.LittleEndian.Uint32(b[offset : offset+4]))
+				p.Z = float64(zVal)*las.Header.ZScaleFactor + las.Header.ZOffset
 				offset += 4
+
+				log.Printf(" << read point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
+
 				if las.usePointIntensity {
 					p.Intensity = binary.LittleEndian.Uint16(b[offset : offset+2])
 					offset += 2
@@ -776,11 +827,11 @@ func (las *LasFile) readPoints() error {
 				}
 				// log.Println(tools.FmtJSONString(p))
 				if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-					log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
-					log.Fatal("invalid points")
+					log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					log.Fatal("invalid point X/Y/Z")
 					continue
 				}
-				// log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+				log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 				// log.Println("verify deserialize success.")
 			}
 		}(startingPoint, endingPoint, cpuThread)
@@ -807,9 +858,15 @@ func (las *LasFile) write() error {
 		return errors.New("cannot write LAS file until points have been added; Please see AddLasPoint()")
 	}
 
-	las.Header.XOffset = las.Header.MinX
-	las.Header.YOffset = las.Header.MinY
-	las.Header.ZOffset = las.Header.MinZ
+	log.Printf("write las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+		"userIntensity:[%v] userUserData:[%v]",
+		las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
+		las.Header.PointFormatID, las.Header.PointRecordLength,
+		las.usePointIntensity, las.usePointUserdata)
+
+	// las.Header.XOffset = las.Header.MinX
+	// las.Header.YOffset = las.Header.MinY
+	// las.Header.ZOffset = las.Header.MinZ
 
 	// mantissa := len(fmt.Sprintf("%v", math.Floor(las.Header.MaxX-las.Header.MinX)))
 	// dec := 1.0 / math.Pow10(8-mantissa)
@@ -888,7 +945,15 @@ func (las *LasFile) write() error {
 	binary.LittleEndian.PutUint16(bytes2, uint16(las.Header.FileCreationYear))
 	w.Write(bytes2)
 
-	las.Header.HeaderSize = 235
+	las.Header.HeaderSize = 227
+	if las.Header.VersionMajor == 1 {
+		if las.Header.VersionMinor == 2 {
+			las.Header.HeaderSize = 227
+		} else if las.Header.VersionMinor == 3 {
+			las.Header.HeaderSize = 235
+		}
+	}
+
 	binary.LittleEndian.PutUint16(bytes2, uint16(las.Header.HeaderSize))
 	w.Write(bytes2)
 
@@ -897,7 +962,7 @@ func (las *LasFile) write() error {
 	for i := 0; i < las.Header.NumberOfVLRs; i++ {
 		totalVLRSize += las.VlrData[i].RecordLengthAfterHeader
 	}
-	las.Header.OffsetToPoints = las.Header.HeaderSize + totalVLRSize + 1
+	las.Header.OffsetToPoints = las.Header.HeaderSize + totalVLRSize
 	binary.LittleEndian.PutUint32(bytes4, uint32(las.Header.OffsetToPoints))
 	w.Write(bytes4)
 
@@ -1275,7 +1340,10 @@ func (las *LasFile) write() error {
 				log.Printf("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 					threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
-				var val int32
+				// var val int32
+
+				var xRelative, yRelative, zRelative decimal.Decimal
+				var xVal, yVal, zVal int32
 				var offset int
 				var p PointRecord0
 				b2 := make([]byte, 2)
@@ -1284,17 +1352,18 @@ func (las *LasFile) write() error {
 					p = las.pointData[i]
 
 					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-						log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						log.Fatal("invalid point X/Y/Z")
 						continue
 					}
-					// log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 
 					offset = i * las.Header.PointRecordLength
 
 					// val = int32((p.X - las.Header.XOffset) / las.Header.XScaleFactor)
-					xRelative := decimal.NewFromFloat(p.X).Sub(decimal.NewFromFloat(las.Header.XOffset))
-					val = int32(xRelative.Div(decimal.NewFromFloat(las.Header.XScaleFactor)).IntPart())
-					binary.LittleEndian.PutUint32(b4, uint32(val))
+					xRelative = decimal.NewFromFloat(p.X).Sub(decimal.NewFromFloat(las.Header.XOffset))
+					xVal = int32(xRelative.Div(decimal.NewFromFloat(las.Header.XScaleFactor)).IntPart())
+					binary.LittleEndian.PutUint32(b4, uint32(xVal))
 					b[offset] = b4[0]
 					b[offset+1] = b4[1]
 					b[offset+2] = b4[2]
@@ -1302,9 +1371,9 @@ func (las *LasFile) write() error {
 					offset += 4
 
 					//val = int32((p.Y - las.Header.YOffset) / las.Header.YScaleFactor)
-					yRelative := decimal.NewFromFloat(p.Y).Sub(decimal.NewFromFloat(las.Header.YOffset))
-					val = int32(yRelative.Div(decimal.NewFromFloat(las.Header.YScaleFactor)).IntPart())
-					binary.LittleEndian.PutUint32(b4, uint32(val))
+					yRelative = decimal.NewFromFloat(p.Y).Sub(decimal.NewFromFloat(las.Header.YOffset))
+					yVal = int32(yRelative.Div(decimal.NewFromFloat(las.Header.YScaleFactor)).IntPart())
+					binary.LittleEndian.PutUint32(b4, uint32(yVal))
 					b[offset] = b4[0]
 					b[offset+1] = b4[1]
 					b[offset+2] = b4[2]
@@ -1312,14 +1381,16 @@ func (las *LasFile) write() error {
 					offset += 4
 
 					// val = int32((p.Z - las.Header.ZOffset) / las.Header.ZScaleFactor)
-					zRelative := decimal.NewFromFloat(p.Z).Sub(decimal.NewFromFloat(las.Header.ZOffset))
-					val = int32(zRelative.Div(decimal.NewFromFloat(las.Header.ZScaleFactor)).IntPart())
-					binary.LittleEndian.PutUint32(b4, uint32(val))
+					zRelative = decimal.NewFromFloat(p.Z).Sub(decimal.NewFromFloat(las.Header.ZOffset))
+					zVal = int32(zRelative.Div(decimal.NewFromFloat(las.Header.ZScaleFactor)).IntPart())
+					binary.LittleEndian.PutUint32(b4, uint32(zVal))
 					b[offset] = b4[0]
 					b[offset+1] = b4[1]
 					b[offset+2] = b4[2]
 					b[offset+3] = b4[3]
 					offset += 4
+
+					log.Printf(" >> write point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
 
 					if las.usePointIntensity {
 						binary.LittleEndian.PutUint16(b2, p.Intensity)
@@ -1366,11 +1437,12 @@ func (las *LasFile) write() error {
 						pOffset += 4
 
 						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
-							log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							log.Fatal("invalid point X/Y/Z")
 							continue
 						}
-						// log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-						// log.Println("verify serialize success.")
+						log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+						log.Println("verify serialize success.")
 					}
 
 					// p = las.pointData[i]
@@ -1448,10 +1520,11 @@ func (las *LasFile) write() error {
 					offset = i * las.Header.PointRecordLength
 
 					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-						log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						log.Fatal("invalid point X/Y/Z")
 						continue
 					}
-					// log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 
 					// val = int32((p.X - las.Header.XOffset) / las.Header.XScaleFactor)
 					xRelative := decimal.NewFromFloat(p.X).Sub(decimal.NewFromFloat(las.Header.XOffset))
@@ -1540,10 +1613,11 @@ func (las *LasFile) write() error {
 						pOffset += 4
 
 						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
-							log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							log.Fatal("invalid point X/Y/Z")
 							continue
 						}
-						// log.Printf("valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+						// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
 						// log.Println("verify serialize success.")
 					}
 

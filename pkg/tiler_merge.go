@@ -583,7 +583,12 @@ func (tiler *TilerMerge) exportRootNodeLas(octree octree.ITree, opts *tiler.Tile
 		log.Println(err)
 		log.Fatal(err)
 	}
-	defer func() { newLf.Close() }()
+	defer func() {
+		if newLf != nil {
+			newLf.Close()
+			newLf = nil
+		}
+	}()
 
 	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
 		log.Println(err)
@@ -620,6 +625,9 @@ func (tiler *TilerMerge) exportRootNodeLas(octree octree.ITree, opts *tiler.Tile
 			}
 		}
 	}
+
+	newLf.Close()
+	newLf = nil
 
 	return nil
 }

@@ -215,6 +215,7 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 	defer func() {
 		if newLf != nil {
 			newLf.Close()
+			newLf = nil
 		}
 	}()
 
@@ -244,7 +245,8 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 
 		X, Y, Z := pointLas.PointData().X, pointLas.PointData().Y, pointLas.PointData().Z
 		if !lasFile.CheckPointXYZInvalid(X, Y, Z) {
-			log.Printf("invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			log.Fatal("invalid point X/Y/Z")
 			continue
 		}
 
@@ -266,7 +268,7 @@ func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOpti
 	log.Println("Write las file success.", newFileName)
 
 	// Check
-	log.Printf("newFileName %s", newFileName)
+	log.Printf("check las_file %s", newFileName)
 	mergedLf, err := lidario.NewLasFile(newFileName, "r")
 	if err != nil {
 		log.Println(err)
