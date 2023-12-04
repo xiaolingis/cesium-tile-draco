@@ -15,7 +15,7 @@ import (
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
 )
 
 var recLengths = [11][4]int{
@@ -78,10 +78,10 @@ var classificationOffets = [11]int{
 
 type LasFileLoader struct {
 	LasFile *LasFile
-	Tree    octree.ITree
+	Tree    *grid_tree.GridTree
 }
 
-func NewLasFileLoader(tree octree.ITree) *LasFileLoader {
+func NewLasFileLoader(tree *grid_tree.GridTree) *LasFileLoader {
 	return &LasFileLoader{
 		LasFile: nil,
 		Tree:    tree,

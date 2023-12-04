@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
 	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
@@ -84,7 +84,7 @@ func (tiler *TilerVerify) RunTilerVerifyLas(opts *tiler.TilerOptions) error {
 	return nil
 }
 
-func (tiler *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lidario.LasFileLoader, error) {
+func (tiler *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
@@ -96,7 +96,7 @@ func (tiler *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions,
 	return lasFileLoader, nil
 }
 
-func (tiler *TilerVerify) prepareDataStructure(octree octree.ITree) {
+func (tiler *TilerVerify) prepareDataStructure(octree *grid_tree.GridTree) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 

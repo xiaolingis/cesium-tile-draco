@@ -9,9 +9,7 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/offset_elevation_corrector"
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/pipeline_elevation_corrector"
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters/geoid_offset/gh_offset_calculator"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/random_trees"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
 )
@@ -41,7 +39,7 @@ func (am *StandardAlgorithmManager) GetElevationCorrectionAlgorithm() converters
 	return am.elevationCorrector
 }
 
-func (am *StandardAlgorithmManager) GetTreeAlgorithm() octree.ITree {
+func (am *StandardAlgorithmManager) GetTreeAlgorithm() *grid_tree.GridTree {
 	return evaluateTreeAlgorithm(am.options, am.coordinateConverter, am.elevationCorrector)
 }
 
@@ -71,14 +69,14 @@ func evaluateTreeAlgorithm(
 	options *tiler.TilerOptions,
 	converter converters.CoordinateConverter,
 	elevationCorrection converters.ElevationCorrector,
-) octree.ITree {
+) *grid_tree.GridTree {
 	switch options.Algorithm {
 	case tiler.Grid:
 		return grid_tree.NewGridTree(converter, elevationCorrection, options.CellMaxSize, options.CellMinSize)
-	case tiler.RandomBox:
-		return random_trees.NewBoxedRandomTree(options, converter, elevationCorrection)
-	case tiler.Random:
-		return random_trees.NewRandomTree(options, converter, elevationCorrection)
+		// case tiler.RandomBox:
+		// 	return random_trees.NewBoxedRandomTree(options, converter, elevationCorrection)
+		// case tiler.Random:
+		// 	return random_trees.NewRandomTree(options, converter, elevationCorrection)
 	}
 
 	log.Fatal("Unrecognized strategy")

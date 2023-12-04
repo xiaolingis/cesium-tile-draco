@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
@@ -61,7 +60,7 @@ func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
 	return nil
 }
 
-func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tree octree.ITree) {
+func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) {
 	// Create empty octree
 	lasFileLoader, err := tiler.readLasData(filePath, opts, tree)
 	if err != nil {
@@ -84,7 +83,7 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 }
 
-func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lidario.LasFileLoader, error) {
+func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
@@ -100,12 +99,12 @@ func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree 
 	edgeZ := lasFile.Header.MaxZ - lasFile.Header.MinZ
 	useEdgeCalculateGeometricError := opts.TilerIndexOptions.UseEdgeCalculateGeometricError
 
-	tree.(*grid_tree.GridTree).UpdateExtendChunkEdge(edgeX, edgeY, edgeZ, useEdgeCalculateGeometricError)
+	tree.UpdateExtendChunkEdge(edgeX, edgeY, edgeZ, useEdgeCalculateGeometricError)
 
 	return lasFileLoader, nil
 }
 
-func (tiler *Tiler) prepareDataStructure(octree octree.ITree) {
+func (tiler *Tiler) prepareDataStructure(octree *grid_tree.GridTree) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 
@@ -118,7 +117,7 @@ func (tiler *Tiler) prepareDataStructure(octree octree.ITree) {
 
 }
 
-func (tiler *Tiler) exportToCesiumTileset(octree octree.ITree, opts *tiler.TilerOptions, subfolder string) {
+func (tiler *Tiler) exportToCesiumTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string) {
 	tools.LogOutput("> exporting data...")
 	err := tiler.exportTreeAsTileset(opts, octree, subfolder)
 	if err != nil {
@@ -133,7 +132,7 @@ func getFilenameWithoutExtension(filePath string) string {
 }
 
 // Reads the given las file and preloads data in a list of Point
-func readLas(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lidario.LasFileLoader, error) {
+func readLas(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	var lasFileLoader = lidario.NewLasFileLoader(tree)
 	_, err := lasFileLoader.LoadLasFile(filePath, opts.Srid, opts.EightBitColors)
 	if err != nil {
@@ -146,7 +145,7 @@ func readLas(filePath string, opts *tiler.TilerOptions, tree octree.ITree) (*lid
 
 // Exports the data cloud represented by the given built octree into 3D tiles data structure according to the options
 // specified in the TilerOptions instance
-func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.ITree, subfolder string) error {
+func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree *grid_tree.GridTree, subfolder string) error {
 	// if octree is not built, exit
 	if !octree.IsBuilt() {
 		return errors.New("octree not built, data structure not initialized")
@@ -195,7 +194,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree octree.
 	return nil
 }
 
-func (tiler *Tiler) exportRootNodeLas(octree octree.ITree, opts *tiler.TilerOptions, subfolder string, lasFile *lidario.LasFile) error {
+func (tiler *Tiler) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string, lasFile *lidario.LasFile) error {
 	parentFolder := path.Join(opts.TilerIndexOptions.Output, subfolder)
 
 	var err error

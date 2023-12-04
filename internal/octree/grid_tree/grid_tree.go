@@ -47,7 +47,7 @@ func NewGridTree(
 	elevationCorrector converters.ElevationCorrector,
 	maxCellSize float64,
 	minCellSize float64,
-) octree.ITree {
+) *GridTree {
 	return &GridTree{
 		built:               false,
 		maxCellSize:         maxCellSize,
