@@ -10,7 +10,6 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
 	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
@@ -21,7 +20,7 @@ const internalCoordinateEpsgCode = 3395
 // Represents an GridTree of points and contains all information needed
 // to propagate points in the tree
 type GridTree struct {
-	rootNode            octree.INode
+	rootNode            *GridNode
 	built               bool
 	maxCellSize         float64
 	minCellSize         float64
@@ -77,13 +76,13 @@ func (tree *GridTree) Build() error {
 
 	tree.Loader.ClearLoader()
 
-	tree.rootNode.(*GridNode).BuildPoints()
+	tree.rootNode.BuildPoints()
 	tree.built = true
 
 	return nil
 }
 
-func (tree *GridTree) GetRootNode() octree.INode {
+func (tree *GridTree) GetRootNode() *GridNode {
 	return tree.rootNode
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
@@ -129,7 +129,7 @@ func (c *StandardConsumer) writeBinaryPntsFile(workUnit WorkUnit) error {
 	return nil
 }
 
-func (c *StandardConsumer) generateIntermediateDataForPnts(node octree.INode) (*intermediateData, error) {
+func (c *StandardConsumer) generateIntermediateDataForPnts(node *grid_tree.GridNode) (*intermediateData, error) {
 	points := node.GetPoints()
 
 	if c.refineMode == tiler.RefineModeReplace {
@@ -179,7 +179,7 @@ func (c *StandardConsumer) generateIntermediateDataForPnts(node octree.INode) (*
 	return &intermediateData, nil
 }
 
-func appendParentPoints(node octree.INode, points []*data.Point) []*data.Point {
+func appendParentPoints(node *grid_tree.GridNode, points []*data.Point) []*data.Point {
 	parent := node.GetParent()
 	boundingBox := node.GetBoundingBox()
 	isContained := func(point *data.Point) bool {
@@ -316,7 +316,7 @@ func (c *StandardConsumer) writeTilesetJsonFile(workUnit WorkUnit) error {
 }
 
 // Generates the tileset.json content for the given tree node
-func (c *StandardConsumer) generateTilesetJson(node octree.INode) ([]byte, error) {
+func (c *StandardConsumer) generateTilesetJson(node *grid_tree.GridNode) ([]byte, error) {
 	if !node.IsLeaf() || node.IsRoot() {
 		root, err := c.generateTilesetRoot(node)
 		if err != nil {
@@ -337,7 +337,7 @@ func (c *StandardConsumer) generateTilesetJson(node octree.INode) ([]byte, error
 	return nil, errors.New("this node is a leaf, cannot create a tileset json for it")
 }
 
-func (c *StandardConsumer) generateTilesetRoot(node octree.INode) (*Root, error) {
+func (c *StandardConsumer) generateTilesetRoot(node *grid_tree.GridNode) (*Root, error) {
 	reg, err := node.GetBoundingBoxRegion(c.coordinateConverter)
 
 	if err != nil {
@@ -360,7 +360,7 @@ func (c *StandardConsumer) generateTilesetRoot(node octree.INode) (*Root, error)
 	return &root, nil
 }
 
-func (c *StandardConsumer) generateTileset(node octree.INode, root *Root) *Tileset {
+func (c *StandardConsumer) generateTileset(node *grid_tree.GridNode, root *Root) *Tileset {
 	tileset := Tileset{}
 	tileset.Asset = Asset{Version: "1.0"}
 	tileset.GeometricError = node.ComputeGeometricError()
@@ -369,7 +369,7 @@ func (c *StandardConsumer) generateTileset(node octree.INode, root *Root) *Tiles
 	return &tileset
 }
 
-func (c *StandardConsumer) generateTilesetChildren(node octree.INode) ([]Child, error) {
+func (c *StandardConsumer) generateTilesetChildren(node *grid_tree.GridNode) ([]Child, error) {
 	var children []Child
 	for i, child := range node.GetChildren() {
 		if c.nodeContainsPoints(child) {
@@ -383,11 +383,11 @@ func (c *StandardConsumer) generateTilesetChildren(node octree.INode) ([]Child, 
 	return children, nil
 }
 
-func (c *StandardConsumer) nodeContainsPoints(node octree.INode) bool {
+func (c *StandardConsumer) nodeContainsPoints(node *grid_tree.GridNode) bool {
 	return node != nil && node.TotalNumberOfPoints() > 0
 }
 
-func (c *StandardConsumer) generateTilesetChild(child octree.INode, childIndex int) (*Child, error) {
+func (c *StandardConsumer) generateTilesetChild(child *grid_tree.GridNode, childIndex int) (*Child, error) {
 	childJson := Child{}
 	filename := "tileset.json"
 	if child.IsLeaf() {

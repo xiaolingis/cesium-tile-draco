@@ -10,7 +10,6 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 )
 
 // Models a node of the octree, which can either be a leaf (a node without children nodes) or not.
@@ -19,9 +18,9 @@ import (
 // by the cells to its children which will have smaller cells.
 type GridNode struct {
 	root                bool
-	parent              octree.INode
+	parent              *GridNode
 	boundingBox         *geometry.BoundingBox
-	children            [8]octree.INode
+	children            [8]*GridNode
 	cells               map[gridIndex]*gridCell
 	points              []*data.Point
 	cellSize            float64
@@ -42,12 +41,12 @@ type GridNodeExtend struct {
 // Instantiates a new GridNode
 func NewGridNode(
 	tree *GridTree,
-	parent octree.INode,
+	parent *GridNode,
 	boundingBox *geometry.BoundingBox,
 	maxCellSize float64,
 	minCellSize float64,
 	root bool,
-) octree.INode {
+) *GridNode {
 	node := GridNode{
 		parent:              parent,                           // the parent node
 		root:                root,                             // if the node is the tree root
@@ -113,7 +112,7 @@ func (n *GridNode) GetCellSize() float64 {
 	return n.cellSize
 }
 
-func (n *GridNode) GetChildren() [8]octree.INode {
+func (n *GridNode) GetChildren() [8]*GridNode {
 	return n.children
 }
 
@@ -164,7 +163,7 @@ func (n *GridNode) ComputeGeometricError() float64 {
 		h := treeExtend.chunkEdgeZ
 		diagonal := math.Sqrt(w*w + l*l + h*h)
 
-		rootCellSize := n.extend.tree.rootNode.(*GridNode).GetCellSize()
+		rootCellSize := n.extend.tree.rootNode.GetCellSize()
 		scale := float64(32) // match js.tilesetMaxScreenSpaceError = 16
 
 		return n.cellSize / rootCellSize * diagonal / scale
@@ -200,12 +199,12 @@ func (n *GridNode) BuildPoints() {
 
 	for _, child := range n.children {
 		if child != nil {
-			child.(*GridNode).BuildPoints()
+			child.BuildPoints()
 		}
 	}
 }
 
-func (n *GridNode) GetParent() octree.INode {
+func (n *GridNode) GetParent() *GridNode {
 	return n.parent
 }
 

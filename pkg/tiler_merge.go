@@ -385,10 +385,10 @@ func (tiler *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeList [
 	for _, tree := range treeList {
 		rootNode := tree.GetRootNode()
 		bboxList = append(bboxList, rootNode.GetBoundingBox())
-		nodeList = append(nodeList, rootNode.(*grid_tree.GridNode))
+		nodeList = append(nodeList, rootNode)
 	}
 
-	rootNode := octree.GetRootNode().(*grid_tree.GridNode)
+	rootNode := octree.GetRootNode()
 	rootNode.SetSpartialBoundingBoxByMergeBbox(bboxList)
 	rootNode.SetChildren(nodeList)
 
@@ -512,9 +512,9 @@ func (tiler *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts 
 
 // Exports the data cloud represented by the given built octree into 3D tiles data structure according to the options
 // specified in the TilerOptions instance
-func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, octree *grid_tree.GridTree) error {
+func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tree *grid_tree.GridTree) error {
 	// if octree is not built, exit
-	if !octree.IsBuilt() {
+	if !tree.IsBuilt() {
 		return errors.New("octree not built, data structure not initialized")
 	}
 
@@ -535,7 +535,8 @@ func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, octree 
 	outputDir := opts.Input
 	subfolder := ""
 	producer := io.NewStandardMergeProducer(outputDir, subfolder, opts)
-	go producer.Produce(workChannel, &waitGroup, octree.GetRootNode())
+	rootNode := tree.GetRootNode()
+	go producer.Produce(workChannel, &waitGroup, rootNode)
 
 	// add consumers to waitgroup and launch them
 	for i := 0; i < numConsumers; i++ {
