@@ -73,7 +73,7 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 		// lasFileLoader.Tree = nil
 	}()
 
-	tiler.prepareDataStructure(tree)
+	tiler.prepareDataStructure(tree, opts)
 
 	subfolder := fmt.Sprintf("%s%s", tools.ChunkTilesetFilePrefix, getFilenameWithoutExtension(filePath))
 	tiler.exportToCesiumTileset(tree, opts, subfolder)
@@ -104,11 +104,15 @@ func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree 
 	return lasFileLoader, nil
 }
 
-func (tiler *Tiler) prepareDataStructure(octree *grid_tree.GridTree) {
+func (tiler *Tiler) prepareDataStructure(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 
 	if err := octree.Build(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := octree.MergeSmallNode(opts.MinNumPointsPerNode); err != nil {
 		log.Fatal(err)
 	}
 

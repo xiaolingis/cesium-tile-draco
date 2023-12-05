@@ -2,8 +2,10 @@ package grid_tree
 
 import "C"
 import (
+	"fmt"
 	"log"
 	"math"
+	"sort"
 	"sync"
 	"sync/atomic"
 
@@ -21,6 +23,8 @@ type GridNode struct {
 	parent              *GridNode
 	boundingBox         *geometry.BoundingBox
 	children            [8]*GridNode
+	mergedChildren      []*GridWrapNode
+	childrenPath        [8]string
 	cells               map[gridIndex]*gridCell
 	points              []*data.Point
 	cellSize            float64
@@ -36,6 +40,13 @@ type GridNode struct {
 
 type GridNodeExtend struct {
 	tree *GridTree
+}
+
+type GridWrapNode struct {
+	totalNumberOfPoints int64     // merged points_number
+	nodeIndexList       []int     // merged child_node_index
+	nodeIndex           int       // current child_node_index
+	node                *GridNode // current child_node
 }
 
 // Instantiates a new GridNode
@@ -90,6 +101,21 @@ func (n *GridNode) AddDataPoint(point *data.Point) {
 	atomic.AddInt64(&n.totalNumberOfPoints, 1)
 }
 
+// Adds a Point to the GridNode
+func (n *GridNode) AddDataPointForce(point *data.Point) {
+	if point == nil {
+		return
+	}
+
+	n.points = append(n.points, point)
+
+	// the number of points stored is increased by 1
+	atomic.AddInt32(&n.numberOfPoints, 1)
+
+	// the total number of points stored is increased by one
+	atomic.AddInt64(&n.totalNumberOfPoints, 1)
+}
+
 func (n *GridNode) GetInternalSrid() int {
 	return internalCoordinateEpsgCode
 }
@@ -114,6 +140,10 @@ func (n *GridNode) GetCellSize() float64 {
 
 func (n *GridNode) GetChildren() [8]*GridNode {
 	return n.children
+}
+
+func (n *GridNode) GetChildrenPath() [8]string {
+	return n.childrenPath
 }
 
 func (n *GridNode) GetPoints() []*data.Point {
@@ -279,6 +309,7 @@ func (n *GridNode) initializeChildren() {
 	n.Lock()
 	for i := uint8(0); i < 8; i++ {
 		if n.children[i] == nil {
+			n.childrenPath[i] = fmt.Sprintf("%d", i)
 			n.children[i] = NewGridNode(
 				n.extend.tree,
 				n,
@@ -302,7 +333,7 @@ func (n *GridNode) SetChildren(children []*GridNode) {
 	}
 }
 
-func (n *GridNode) SetSpartialBoundingBoxByMergeBbox(bboxList []*geometry.BoundingBox) {
+func (n *GridNode) SetSpartialBoundingBoxByMergeBbox(bboxList []*geometry.BoundingBox) error {
 
 	nBbox := n.GetBoundingBox()
 	minX, maxX, minY, maxY, minZ, maxZ := nBbox.Xmin, nBbox.Xmax, nBbox.Ymin, nBbox.Ymax, nBbox.Zmin, nBbox.Zmax
@@ -328,6 +359,12 @@ func (n *GridNode) SetSpartialBoundingBoxByMergeBbox(bboxList []*geometry.Boundi
 	}
 
 	n.boundingBox = newBbox
+
+	return nil
+}
+
+func (n *GridNode) MergeBoundingBox(bbox *geometry.BoundingBox) error {
+	return n.SetSpartialBoundingBoxByMergeBbox([]*geometry.BoundingBox{n.boundingBox, bbox})
 }
 
 func (n *GridNode) TruncateChildren() {
@@ -343,6 +380,114 @@ func (n *GridNode) TruncateChildren() {
 
 	n.leaf = 1
 
+}
+
+func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
+	if n.IsLeaf() {
+		return nil
+	}
+
+	// merge children.children first
+	for i, child := range n.children {
+		if child.IsLeaf() {
+			continue
+		}
+		if err := n.children[i].MergeSmallChildren(minPointsNum); err != nil {
+			log.Fatal(err)
+		}
+
+	}
+
+	// merge children
+	wrapChildren := make([]*GridWrapNode, 0)
+
+	// merge children --- prepare wrap_node
+	for i, child := range n.children {
+		if child == nil {
+			continue
+		}
+		wrapChildren = append(wrapChildren, &GridWrapNode{
+			totalNumberOfPoints: child.TotalNumberOfPoints(),
+			nodeIndexList:       []int{i},
+			nodeIndex:           i,
+			node:                n.children[i],
+		})
+	}
+
+	// merge children --- merge-index by sort
+	wrapChildrenLen := len(wrapChildren)
+	for {
+		if wrapChildrenLen < 2 {
+			break
+		}
+		sort.Slice(wrapChildren, func(i, j int) bool {
+			return wrapChildren[i].totalNumberOfPoints <= wrapChildren[j].totalNumberOfPoints
+		})
+
+		if wrapChildren[0].totalNumberOfPoints > 4*minPointsNum ||
+			(wrapChildren[0].totalNumberOfPoints+wrapChildren[1].totalNumberOfPoints) > 8*minPointsNum {
+			// break if no longer suitable for merge
+			break
+		}
+
+		// merge children[0] to children[1]
+		wrapChildren[1].totalNumberOfPoints += wrapChildren[0].totalNumberOfPoints
+		wrapChildren[1].nodeIndexList = append(wrapChildren[1].nodeIndexList, wrapChildren[0].nodeIndexList...)
+
+		wrapChildren = wrapChildren[1:]
+		wrapChildrenLen = wrapChildrenLen - 1
+
+	}
+
+	n.mergedChildren = wrapChildren
+
+	// merge children --- merge-points
+	for _, wrapChild := range n.mergedChildren {
+		if len(wrapChild.nodeIndexList) < 2 {
+			continue
+		}
+		nodeLen := len(wrapChild.nodeIndexList)
+		lastNodeIndex := wrapChild.nodeIndexList[nodeLen-1]
+		for j := 0; j < nodeLen-1; j++ {
+			nodeIndex := wrapChild.nodeIndexList[j]
+
+			n.children[lastNodeIndex].numberOfPoints += n.children[nodeIndex].numberOfPoints
+			n.children[lastNodeIndex].totalNumberOfPoints += n.children[nodeIndex].totalNumberOfPoints
+			n.children[lastNodeIndex].points = append(n.children[lastNodeIndex].points, n.children[nodeIndex].points...)
+			n.children[lastNodeIndex].MergeBoundingBox(n.children[nodeIndex].boundingBox)
+			n.childrenPath[lastNodeIndex] += n.childrenPath[nodeIndex]
+
+			n.children[nodeIndex].points = nil
+			n.children[nodeIndex].mergedChildren = nil
+			n.children[nodeIndex].cells = nil
+			n.children[nodeIndex] = nil
+		}
+	}
+
+	// merge children to parent
+	wrapChildrenLen = len(wrapChildren)
+	var node *GridNode = nil
+	if wrapChildrenLen == 1 {
+		nodeIndexList := wrapChildren[0].nodeIndexList
+		nodeIndex := nodeIndexList[len(nodeIndexList)-1]
+		node = n.children[nodeIndex]
+
+		if n.totalNumberOfPoints <= 4*minPointsNum &&
+			(n.totalNumberOfPoints+node.totalNumberOfPoints <= 8*minPointsNum) {
+			// merge to parent
+			n.numberOfPoints += n.children[nodeIndex].numberOfPoints
+			n.points = append(n.points, n.children[nodeIndex].points...)
+			n.leaf = 1
+
+			n.children[nodeIndex].points = nil
+			n.children[nodeIndex].mergedChildren = nil
+			n.children[nodeIndex].cells = nil
+			n.children[nodeIndex] = nil
+
+		}
+	}
+
+	return nil
 }
 
 // Returns a bounding box from the given box and the given octant index

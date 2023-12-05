@@ -219,3 +219,18 @@ func (tree *GridTree) UpdateExtendChunkEdge(chunkEdgeX, chunkEdgeY, chunkEdgeZ f
 	tree.extend.chunkEdgeZ = chunkEdgeZ
 	tree.extend.useEdgeCalculateGeometricError = useEdgeCalculateGeometricError
 }
+
+func (tree *GridTree) MergeSmallNode(minPointsNum int32) error {
+	if !tree.built {
+		err := errors.New("octree does not built")
+		log.Fatal(err)
+		return err
+	}
+
+	if err := tree.rootNode.MergeSmallChildren(int64(minPointsNum)); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
+}

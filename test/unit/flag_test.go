@@ -112,8 +112,8 @@ func TestMaxPtsFlagIsParsed(t *testing.T) {
 	os.Args = []string{"gocesiumtiler", "-maxpts=2000"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
-	if *flags.MaxNumPts != expected {
-		t.Errorf("Expected MaxNumPts = %d, got %d", expected, *flags.MaxNumPts)
+	if *flags.MaxNumPoints != expected {
+		t.Errorf("Expected MaxNumPoints = %d, got %d", expected, *flags.MaxNumPoints)
 	}
 }
 func TestMFlagIsParsed(t *testing.T) {
@@ -121,8 +121,8 @@ func TestMFlagIsParsed(t *testing.T) {
 	os.Args = []string{"gocesiumtiler", "-m=2000"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
-	if *flags.MaxNumPts != expected {
-		t.Errorf("Expected MaxNumPts = %d, got %d", expected, *flags.MaxNumPts)
+	if *flags.MaxNumPoints != expected {
+		t.Errorf("Expected MaxNumPoints = %d, got %d", expected, *flags.MaxNumPoints)
 	}
 }
 
@@ -131,8 +131,8 @@ func TestMaxPtsFlagDefaultIs50000(t *testing.T) {
 	os.Args = []string{"gocesiumtiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
-	if *flags.MaxNumPts != expected {
-		t.Errorf("Expected MaxNumPts = %d, got %d", expected, *flags.MaxNumPts)
+	if *flags.MaxNumPoints != expected {
+		t.Errorf("Expected MaxNumPoints = %d, got %d", expected, *flags.MaxNumPoints)
 	}
 }
 

@@ -23,7 +23,8 @@ type TilerFlags struct {
 	Srid                      *int    `json:"srid"`
 	EightBitColors            *bool
 	ZOffset                   *float64
-	MaxNumPts                 *int
+	MaxNumPoints              *int
+	MinNumPoints              *int
 	ZGeoidCorrection          *bool
 	FolderProcessing          *bool
 	RecursiveFolderProcessing *bool
@@ -77,6 +78,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	eightBit := defineBoolFlagCommand(flagCommand, "8bit", "b", false, "Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)")
 	zOffset := defineFloat64FlagCommand(flagCommand, "zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
 	zGeoidCorrection := defineBoolFlagCommand(flagCommand, "geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
+	minNumPointsPerNode := defineIntFlagCommand(flagCommand, "points-min-num", "m", 10000, "Minimum allowed number of points per node for GridTree Algorithms.")
 	folderProcessing := defineBoolFlagCommand(flagCommand, "folder", "f", false, "Enables processing of all las files from input folder. Input must be a folder if specified")
 	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
 	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
@@ -100,7 +102,8 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 			Srid:                      srid,
 			EightBitColors:            eightBit,
 			ZOffset:                   zOffset,
-			MaxNumPts:                 &maxNumPointsPerNode,
+			MaxNumPoints:              &maxNumPointsPerNode,
+			MinNumPoints:              minNumPointsPerNode,
 			ZGeoidCorrection:          zGeoidCorrection,
 			FolderProcessing:          folderProcessing,
 			RecursiveFolderProcessing: recursiveFolderProcessing,
@@ -135,6 +138,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 
 	folderProcessing := true
 
+	minNumPointsPerNode := 10000
 	maxNumPointsPerNode := 50000
 	algorithm := "grid"
 
@@ -146,7 +150,8 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			Srid:                      srid,
 			EightBitColors:            eightBit,
 			ZOffset:                   zOffset,
-			MaxNumPts:                 &maxNumPointsPerNode,
+			MaxNumPoints:              &maxNumPointsPerNode,
+			MinNumPoints:              &minNumPointsPerNode,
 			ZGeoidCorrection:          zGeoidCorrection,
 			FolderProcessing:          &folderProcessing,
 			RecursiveFolderProcessing: recursiveFolderProcessing,
@@ -178,6 +183,7 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 
 	folderProcessing := true
 
+	minNumPointsPerNode := 10000
 	maxNumPointsPerNode := 50000
 	algorithm := "grid"
 	refineMode := "REPLACE"
@@ -190,7 +196,8 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 			Srid:                      srid,
 			EightBitColors:            eightBit,
 			ZOffset:                   zOffset,
-			MaxNumPts:                 &maxNumPointsPerNode,
+			MaxNumPoints:              &maxNumPointsPerNode,
+			MinNumPoints:              &minNumPointsPerNode,
 			ZGeoidCorrection:          zGeoidCorrection,
 			FolderProcessing:          &folderProcessing,
 			RecursiveFolderProcessing: recursiveFolderProcessing,

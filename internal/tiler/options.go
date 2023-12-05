@@ -48,6 +48,7 @@ type TilerOptions struct {
 	Srid                   int        // EPSG code for SRID of input LAS points
 	EightBitColors         bool       // if true assume that LAS uses 8bit color depth
 	ZOffset                float64    // Z Offset in meters to apply to points during conversion
+	MinNumPointsPerNode    int32      // Minimum allowed number of points per node for GridTree Algorithms
 	MaxNumPointsPerNode    int32      // Maximum allowed number of points per node for Random and RandomBox Algorithms
 	EnableGeoidZCorrection bool       // Enables the conversion from geoid to ellipsoid height
 	FolderProcessing       bool       // Enables the processing of all LAS files in folder
@@ -85,6 +86,7 @@ func (opt *TilerOptions) Copy() *TilerOptions {
 		Srid:                   opt.Srid,
 		EightBitColors:         opt.EightBitColors,
 		ZOffset:                opt.ZOffset,
+		MinNumPointsPerNode:    opt.MinNumPointsPerNode,
 		MaxNumPointsPerNode:    opt.MaxNumPointsPerNode,
 		EnableGeoidZCorrection: opt.EnableGeoidZCorrection,
 		FolderProcessing:       opt.FolderProcessing,
