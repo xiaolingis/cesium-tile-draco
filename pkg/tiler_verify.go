@@ -18,7 +18,7 @@ type TilerVerify struct {
 	algorithmManager algorithm_manager.AlgorithmManager
 }
 
-func NewTilerVerify(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) ITiler {
+func NewTilerVerify(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) tiler.ITiler {
 	return &TilerVerify{
 		fileFinder:       fileFinder,
 		algorithmManager: algorithmManager,

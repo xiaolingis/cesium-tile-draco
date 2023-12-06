@@ -19,16 +19,12 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
 
-type ITiler interface {
-	RunTiler(opts *tiler.TilerOptions) error
-}
-
 type TilerIndex struct {
 	fileFinder       tools.FileFinder
 	algorithmManager algorithm_manager.AlgorithmManager
 }
 
-func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) ITiler {
+func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) tiler.ITiler {
 	return &TilerIndex{
 		fileFinder:       fileFinder,
 		algorithmManager: algorithmManager,

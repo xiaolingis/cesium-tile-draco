@@ -30,7 +30,7 @@ type TilerMerge struct {
 	algorithmManager algorithm_manager.AlgorithmManager
 }
 
-func NewTilerMerge(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) ITiler {
+func NewTilerMerge(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) tiler.ITiler {
 	return &TilerMerge{
 		fileFinder:       fileFinder,
 		algorithmManager: algorithmManager,
