@@ -37,14 +37,14 @@ func NewTilerMerge(fileFinder tools.FileFinder, algorithmManager algorithm_manag
 	}
 }
 
-func (tiler *TilerMerge) RunTiler(opts *tiler.TilerOptions) error {
+func (tilerMerge *TilerMerge) RunTiler(opts *tiler.TilerOptions) error {
 	if opts.Command == tools.CommandMergeChildren {
-		if err := tiler.RunTilerMergeChildren(opts); err != nil {
+		if err := tilerMerge.RunTilerMergeChildren(opts); err != nil {
 			log.Println(err)
 			return nil
 		}
 	} else if opts.Command == tools.CommandMergeTree {
-		if err := tiler.RunTilerMergeTree(opts); err != nil {
+		if err := tilerMerge.RunTilerMergeTree(opts); err != nil {
 			log.Println(err)
 			return nil
 		}
@@ -53,11 +53,11 @@ func (tiler *TilerMerge) RunTiler(opts *tiler.TilerOptions) error {
 	return nil
 }
 
-func (tiler *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
+func (tilerMerge *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
 	log.Println("Preparing list of files to process...")
 
 	// Prepare list of files to process
-	lasFilePathList := tiler.fileFinder.GetLasFilesToMerge(opts)
+	lasFilePathList := tilerMerge.fileFinder.GetLasFilesToMerge(opts)
 	log.Println("las_file list", lasFilePathList)
 
 	if len(lasFilePathList) == 0 {
@@ -70,8 +70,8 @@ func (tiler *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
 		log.Printf("las_file path %d [%s]", i+1, filePath)
 	}
 
-	tree := tiler.algorithmManager.GetTreeAlgorithm()
-	lasFile, err := tiler.mergeLasFileListToSingleTree(lasFilePathList, opts, tree)
+	tree := tilerMerge.algorithmManager.GetTreeAlgorithm()
+	lasFile, err := tilerMerge.mergeLasFileListToSingleTree(lasFilePathList, opts, tree)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -81,19 +81,19 @@ func (tiler *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
 		_ = lasFile.Close()
 	}()
 
-	tiler.exportTreeRootTileset(tree, opts)
-	tiler.repairTilesetMetadata(opts, lasFilePathList)
+	tilerMerge.exportTreeRootTileset(tree, opts)
+	tilerMerge.repairTilesetMetadata(opts, lasFilePathList)
 
-	tiler.exportRootNodeLas(tree, opts, lasFile)
+	tilerMerge.exportRootNodeLas(tree, opts, lasFile)
 
-	tiler.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
+	tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
 
 	tools.LogOutput("> done merging-children", opts.Input)
 
 	return nil
 }
 
-func (tiler *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
+func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
 	log.Println("Preparing list of files to process...")
 
 	rootDir := strings.TrimSuffix(filepath.Join(opts.Input, ""), "/")
@@ -163,10 +163,10 @@ func (tiler *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
 			dirOpts.CellMinSize = cellSize
 
 			log.Println("dirOpts", tools.FmtJSONString(dirOpts))
-			tiler.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
-			tiler.algorithmManager = std_algorithm_manager.NewAlgorithmManager(dirOpts)
+			tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
+			tilerMerge.algorithmManager = std_algorithm_manager.NewAlgorithmManager(dirOpts)
 
-			tiler.RunTilerMergeChildren(dirOpts)
+			tilerMerge.RunTilerMergeChildren(dirOpts)
 		}
 		cellSize *= 2
 
@@ -177,12 +177,12 @@ func (tiler *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
 	return nil
 }
 
-func (tiler *TilerMerge) mergeLasFileListToSingleTree(
+func (tilerMerge *TilerMerge) mergeLasFileListToSingleTree(
 	lasFilePathList []string, opts *tiler.TilerOptions, tree *grid_tree.GridTree,
 ) (lasFile *lidario.LasFile, _err error) {
 
 	// merge multi sub-folder las to single-las
-	mergedLasFilePath, err := tiler.mergeLasFileList(lasFilePathList)
+	mergedLasFilePath, err := tilerMerge.mergeLasFileList(lasFilePathList)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -191,22 +191,22 @@ func (tiler *TilerMerge) mergeLasFileListToSingleTree(
 
 	// load merged single-las
 	tools.LogOutput("Processing file " + mergedLasFilePath)
-	lasFileLoader, err := tiler.readLasData(mergedLasFilePath, opts, tree)
+	lasFileLoader, err := tilerMerge.readLasData(mergedLasFilePath, opts, tree)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 
-	tiler.prepareDataStructure(tree)
+	tilerMerge.prepareDataStructure(tree)
 	log.Println(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
 
 	// load sub-folder las points in octree buffer
 	lasTreeList := make([]*grid_tree.GridTree, 0)
 	for i, filePath := range lasFilePathList {
 		// Define point_loader strategy
-		lasTree := tiler.algorithmManager.GetTreeAlgorithm()
+		lasTree := tilerMerge.algorithmManager.GetTreeAlgorithm()
 		tools.LogOutput("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFilePathList)) + ", " + filePath)
-		tiler.loadLasFileIntoTree(filePath, opts, lasTree)
+		tilerMerge.loadLasFileIntoTree(filePath, opts, lasTree)
 
 		lasTreeList = append(lasTreeList, lasTree)
 	}
@@ -227,10 +227,10 @@ func (tiler *TilerMerge) mergeLasFileListToSingleTree(
 		}
 
 		// prepare parent-tree hierachy
-		tiler.prepareDataStructure(parentTree)
+		tilerMerge.prepareDataStructure(parentTree)
 	*/
 
-	if err := tiler.RepairParentTree(tree, lasTreeList); err != nil {
+	if err := tilerMerge.RepairParentTree(tree, lasTreeList); err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
@@ -238,9 +238,9 @@ func (tiler *TilerMerge) mergeLasFileListToSingleTree(
 	return lasFileLoader.LasFile, nil
 }
 
-func (tiler *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) {
+func (tilerMerge *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) {
 	// Create octree from las
-	lasFileLoader, err := tiler.readLasData(filePath, opts, tree)
+	lasFileLoader, err := tilerMerge.readLasData(filePath, opts, tree)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -249,13 +249,13 @@ func (tiler *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.TilerO
 		_ = lasFileLoader.LasFile.Close()
 	}()
 
-	tiler.prepareDataStructure(tree)
+	tilerMerge.prepareDataStructure(tree)
 	log.Println(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 }
 
-func (tiler *TilerMerge) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
+func (tilerMerge *TilerMerge) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
@@ -267,7 +267,7 @@ func (tiler *TilerMerge) readLasData(filePath string, opts *tiler.TilerOptions, 
 	return lasFileLoader, nil
 }
 
-func (tiler *TilerMerge) prepareDataStructure(octree *grid_tree.GridTree) error {
+func (tilerMerge *TilerMerge) prepareDataStructure(octree *grid_tree.GridTree) error {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 
@@ -281,7 +281,7 @@ func (tiler *TilerMerge) prepareDataStructure(octree *grid_tree.GridTree) error 
 
 	return nil
 }
-func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
+func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
 	mergedLasFilePath := "/tmp/merged.las"
 
 	filePath := lasFilePathList[0]
@@ -375,7 +375,7 @@ func (tiler *TilerMerge) mergeLasFileList(lasFilePathList []string) (_mergeLasFi
 	return mergedLasFilePath, nil
 }
 
-func (tiler *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeList []*grid_tree.GridTree) error {
+func (tilerMerge *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeList []*grid_tree.GridTree) error {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building parent tree structure...")
 
@@ -395,7 +395,7 @@ func (tiler *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeList [
 	return nil
 }
 
-func (tiler *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFilePathList []string) {
+func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFilePathList []string) {
 	// folder hierachy
 	/*
 		${output}/
@@ -502,9 +502,9 @@ func (tiler *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFile
 
 }
 
-func (tiler *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
+func (tilerMerge *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
 	tools.LogOutput("> exporting data...")
-	err := tiler.exportRootNodeTileset(opts, octree)
+	err := tilerMerge.exportRootNodeTileset(opts, octree)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -512,7 +512,7 @@ func (tiler *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts 
 
 // Exports the data cloud represented by the given built octree into 3D tiles data structure according to the options
 // specified in the TilerOptions instance
-func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tree *grid_tree.GridTree) error {
+func (tilerMerge *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tree *grid_tree.GridTree) error {
 	// if octree is not built, exit
 	if !tree.IsBuilt() {
 		return errors.New("octree not built, data structure not initialized")
@@ -541,7 +541,7 @@ func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tree *g
 	// add consumers to waitgroup and launch them
 	for i := 0; i < numConsumers; i++ {
 		waitGroup.Add(1)
-		consumer := io.NewStandardConsumer(tiler.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode)
+		consumer := io.NewStandardConsumer(tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode)
 		go consumer.Consume(workChannel, errorChannel, &waitGroup)
 	}
 
@@ -564,7 +564,7 @@ func (tiler *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tree *g
 	return nil
 }
 
-func (tiler *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.TilerOptions, lasFile *lidario.LasFile) error {
+func (tilerMerge *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.TilerOptions, lasFile *lidario.LasFile) error {
 	parentFolder := opts.Input
 
 	var err error
