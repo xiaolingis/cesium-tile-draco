@@ -82,7 +82,11 @@ func (tilerMerge *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) er
 	}()
 
 	tilerMerge.exportTreeRootTileset(tree, opts)
-	tilerMerge.repairTilesetMetadata(opts, lasFilePathList)
+
+	if err := tilerMerge.repairTilesetMetadata(opts, lasFilePathList); err != nil {
+		log.Fatal(err)
+		return err
+	}
 
 	tilerMerge.exportRootNodeLas(tree, opts, lasFile)
 
@@ -167,6 +171,18 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 			tilerMerge.algorithmManager = std_algorithm_manager.NewAlgorithmManager(dirOpts)
 
 			tilerMerge.RunTilerMergeChildren(dirOpts)
+
+			if i == 1 {
+				scale := 2
+				if err := tilerMerge.AdjustRootGeometricError(dirOpts, scale); err != nil {
+					log.Fatal(err)
+				}
+			} else if i == 0 {
+				scale := 4
+				if err := tilerMerge.AdjustRootGeometricError(dirOpts, scale); err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
 		cellSize *= 2
 
@@ -395,7 +411,7 @@ func (tilerMerge *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeL
 	return nil
 }
 
-func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFilePathList []string) {
+func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, lasFilePathList []string) error {
 	// folder hierachy
 	/*
 		${output}/
@@ -426,9 +442,11 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 	rootFile, err := ioutil.ReadFile(rootMetadataPath)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	if err := json.Unmarshal([]byte(rootFile), &rootTileset); err != nil {
 		log.Fatal(err)
+		return err
 	}
 
 	// read tileset for children
@@ -443,9 +461,11 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 		childFile, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			log.Fatal(err)
+			return err
 		}
 		if err := json.Unmarshal([]byte(childFile), &childTileset); err != nil {
 			log.Fatal(err)
+			return err
 		}
 		childTilesetList = append(childTilesetList, &childTileset)
 	}
@@ -493,13 +513,59 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 	rootTilesetJSON, err := json.MarshalIndent(rootTileset, "", "\t")
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
 	// Writes the tileset.json binary content to the given file
 	if err = ioutil.WriteFile(rootMetadataPath, rootTilesetJSON, 0666); err != nil {
 		log.Fatal(err)
+		return err
 	}
 
+	return nil
+}
+
+func (tilerMerge *TilerMerge) AdjustRootGeometricError(opts *tiler.TilerOptions, scale int) error {
+	// folder hierachy
+	/*
+		${output}/
+			|- tileset.json
+			|- content.pnts
+			|- content.las
+
+	*/
+	rootDir := filepath.Join(opts.Input, "")
+
+	// read tileset for root
+	rootMetadataPath := filepath.Join(rootDir, "tileset.json")
+	rootTileset := io.Tileset{}
+	rootFile, err := ioutil.ReadFile(rootMetadataPath)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	if err := json.Unmarshal([]byte(rootFile), &rootTileset); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	rootTileset.Root.GeometricError *= float64(scale)
+
+	// write root tilset.json
+	// Outputting a formatted json file
+	rootTilesetJSON, err := json.MarshalIndent(rootTileset, "", "\t")
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	// Writes the tileset.json binary content to the given file
+	if err = ioutil.WriteFile(rootMetadataPath, rootTilesetJSON, 0666); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }
 
 func (tilerMerge *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
