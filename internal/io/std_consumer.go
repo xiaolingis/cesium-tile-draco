@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -373,7 +374,7 @@ func (c *StandardConsumer) generateTilesetChildren(node *grid_tree.GridNode) ([]
 	var children []Child
 	for i, child := range node.GetChildren() {
 		if c.nodeContainsPoints(child) {
-			childJson, err := c.generateTilesetChild(child, i)
+			childJson, err := c.generateTilesetChild(child, i, node)
 			if err != nil {
 				return nil, err
 			}
@@ -387,14 +388,24 @@ func (c *StandardConsumer) nodeContainsPoints(node *grid_tree.GridNode) bool {
 	return node != nil && node.TotalNumberOfPoints() > 0
 }
 
-func (c *StandardConsumer) generateTilesetChild(child *grid_tree.GridNode, childIndex int) (*Child, error) {
+func (c *StandardConsumer) generateTilesetChild(child *grid_tree.GridNode, childIndex int, parent *grid_tree.GridNode) (*Child, error) {
 	childJson := Child{}
 	filename := "tileset.json"
 	if child.IsLeaf() {
 		filename = "content.pnts"
 	}
+
+	childrenPath := parent.GetChildrenPath()
+	childPath := childrenPath[childIndex]
+	// sort "74520" to "02457" for merge_children case
+	if len(childPath) > 1 {
+		childList := []byte(childPath)
+		sort.Slice(childList, func(i, j int) bool { return childList[i] < childList[j] })
+		childPath = string(childList)
+	}
+
 	childJson.Content = Content{
-		Url: strconv.Itoa(childIndex) + "/" + filename,
+		Url: childPath + "/" + filename,
 	}
 	reg, err := child.GetBoundingBoxRegion(c.coordinateConverter)
 	if err != nil {

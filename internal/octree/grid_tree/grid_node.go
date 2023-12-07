@@ -444,10 +444,15 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 
 	// merge children
 	wrapChildren := make([]*GridWrapNode, 0)
+	branchChildrenCount := 0
 
 	// merge children --- prepare wrap_node
 	for i, child := range n.children {
 		if child == nil {
+			continue
+		}
+		if !child.IsLeaf() {
+			branchChildrenCount += 1
 			continue
 		}
 		wrapChildren = append(wrapChildren, &GridWrapNode{
@@ -465,7 +470,9 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 			break
 		}
 		sort.Slice(wrapChildren, func(i, j int) bool {
-			return wrapChildren[i].totalNumberOfPoints <= wrapChildren[j].totalNumberOfPoints
+			return wrapChildren[i].totalNumberOfPoints < wrapChildren[j].totalNumberOfPoints ||
+				(wrapChildren[i].totalNumberOfPoints == wrapChildren[j].totalNumberOfPoints &&
+					wrapChildren[i].nodeIndex > wrapChildren[j].nodeIndex)
 		})
 
 		if wrapChildren[0].totalNumberOfPoints > 4*minPointsNum ||
@@ -474,19 +481,23 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 			break
 		}
 
-		// node0 := wrapChildren[0].node
-		// node1 := wrapChildren[1].node
-		// log.Printf("merge leaf-node. "+
-		// 	"nodeNID:[%s] numberOfPoints:[%d] totalPoints:[%d] to "+
-		// 	"nodeNID:[%s] numberOfPoints:[%d] totalPoints:[%d] ",
-		// 	node0.nodeNID, node0.NumberOfPoints(), node0.TotalNumberOfPoints(),
-		// 	node1.nodeNID, node1.NumberOfPoints(), node1.TotalNumberOfPoints(),
-		// )
-
 		// merge children[0] to children[1]
 		wrapChildren[1].totalNumberOfPoints += wrapChildren[0].totalNumberOfPoints
 		wrapChildren[1].nodeIndexList = append(wrapChildren[1].nodeIndexList, wrapChildren[0].nodeIndexList...)
 
+		// // log
+		// node0 := wrapChildren[0].node
+		// node1 := wrapChildren[1].node
+		// log.Printf("merge leaf-node. "+
+		// 	"nodeNID:[%s] numPoints:[%d] totalPoints:[%d] to "+
+		// 	"nodeNID:[%s] numPoints:[%d] totalPoints:[%d] "+
+		// 	"totalMerge:[%d] nodeIndexList:[%s]",
+		// 	node0.nodeNID, node0.NumberOfPoints(), node0.TotalNumberOfPoints(),
+		// 	node1.nodeNID, node1.NumberOfPoints(), node1.TotalNumberOfPoints(),
+		// 	wrapChildren[1].totalNumberOfPoints, tools.FmtJSONString(wrapChildren[1].nodeIndexList),
+		// )
+
+		// merge - shrink
 		wrapChildren = wrapChildren[1:]
 		wrapChildrenLen = wrapChildrenLen - 1
 
@@ -500,19 +511,24 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 			continue
 		}
 		nodeLen := len(wrapChild.nodeIndexList)
-		lastNodeIndex := wrapChild.nodeIndexList[nodeLen-1]
-		for j := 0; j < nodeLen-1; j++ {
+		mainNodeIndex := wrapChild.nodeIndexList[0]
+		for j := 1; j < nodeLen; j++ {
 			nodeIndex := wrapChild.nodeIndexList[j]
 
-			n.children[lastNodeIndex].numberOfPoints += n.children[nodeIndex].numberOfPoints
-			n.children[lastNodeIndex].totalNumberOfPoints += n.children[nodeIndex].totalNumberOfPoints
-			n.children[lastNodeIndex].points = append(n.children[lastNodeIndex].points, n.children[nodeIndex].points...)
-			n.children[lastNodeIndex].MergeBoundingBox(n.children[nodeIndex].boundingBox)
-			n.childrenPath[lastNodeIndex] += n.childrenPath[nodeIndex]
+			n.children[mainNodeIndex].numberOfPoints += n.children[nodeIndex].numberOfPoints
+			n.children[mainNodeIndex].totalNumberOfPoints += n.children[nodeIndex].totalNumberOfPoints
+			n.children[mainNodeIndex].points = append(n.children[mainNodeIndex].points, n.children[nodeIndex].points...)
+			n.children[mainNodeIndex].MergeBoundingBox(n.children[nodeIndex].boundingBox)
+			n.childrenPath[mainNodeIndex] += n.childrenPath[nodeIndex]
 
 			n.children[nodeIndex].points = nil
 			n.children[nodeIndex].mergedChildren = nil
 			n.children[nodeIndex].cells = nil
+
+			n.children[nodeIndex].numberOfPoints = 0
+			n.children[nodeIndex].totalNumberOfPoints = 0
+			n.children[nodeIndex].leaf = 1
+
 			n.children[nodeIndex] = nil
 		}
 	}
@@ -520,21 +536,25 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 	// merge children to parent
 	wrapChildrenLen = len(wrapChildren)
 	var node *GridNode = nil
-	if wrapChildrenLen == 1 {
-		nodeIndexList := wrapChildren[0].nodeIndexList
-		nodeIndex := nodeIndexList[len(nodeIndexList)-1]
-		node = n.children[nodeIndex]
+	if branchChildrenCount == 0 && wrapChildrenLen == 1 {
+		nodeIndex := wrapChildren[0].nodeIndexList[0]
+		node = wrapChildren[0].node
 
 		if n.totalNumberOfPoints <= 4*minPointsNum &&
 			(n.totalNumberOfPoints+node.totalNumberOfPoints <= 8*minPointsNum) {
 			// merge to parent
-			n.numberOfPoints += n.children[nodeIndex].numberOfPoints
-			n.points = append(n.points, n.children[nodeIndex].points...)
+			n.numberOfPoints += node.numberOfPoints
+			n.points = append(n.points, node.points...)
 			n.leaf = 1
 
 			n.children[nodeIndex].points = nil
 			n.children[nodeIndex].mergedChildren = nil
 			n.children[nodeIndex].cells = nil
+
+			n.children[nodeIndex].numberOfPoints = 0
+			n.children[nodeIndex].totalNumberOfPoints = 0
+			n.children[nodeIndex].leaf = 1
+
 			n.children[nodeIndex] = nil
 
 		}
