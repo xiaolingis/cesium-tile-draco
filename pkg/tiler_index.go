@@ -108,9 +108,22 @@ func (tilerIndex *TilerIndex) prepareDataStructure(octree *grid_tree.GridTree, o
 		log.Fatal(err)
 	}
 
+	if opts.MaxNumPointsPerNode < 8*opts.MinNumPointsPerNode {
+		err := fmt.Errorf("MaxNumPoints shoud be greater than 8 * MinNumPoints")
+		log.Fatal(err)
+	}
+
+	log.Println("split-big-node for tree...")
+	if err := octree.SplitBigNode(opts.MaxNumPointsPerNode); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("split-big-node for tree finished")
+
+	log.Println("merge-small-node for tree...")
 	if err := octree.MergeSmallNode(opts.MinNumPointsPerNode); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("merge-small-node for tree finished")
 
 	rootNode := octree.GetRootNode()
 	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
@@ -276,15 +289,15 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 
 	log.Println("Write las file success.", newFileName)
 
-	// Check
-	log.Printf("check las_file %s", newFileName)
-	mergedLf, err := lidario.NewLasFile(newFileName, "r")
-	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
-		return err
-	}
-	defer mergedLf.Close()
+	// // Check
+	// log.Printf("check las_file %s", newFileName)
+	// mergedLf, err := lidario.NewLasFile(newFileName, "r")
+	// if err != nil {
+	// 	log.Println(err)
+	// 	log.Fatal(err)
+	// 	return err
+	// }
+	// defer mergedLf.Close()
 
 	return nil
 }

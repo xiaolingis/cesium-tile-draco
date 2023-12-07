@@ -175,12 +175,14 @@ func (tree *GridTree) init() {
 	log.Println("x-diff:", box[1]-box[0], ", y-diff:", box[3]-box[2], ", z-diff:", box[5]-box[4])
 
 	node := NewGridNode(
+		"r",
 		tree,
 		nil,
 		geometry.NewBoundingBox(box[0], box[1], box[2], box[3], box[4], box[5]),
 		tree.maxCellSize,
 		tree.minCellSize,
-		true)
+		true,
+	)
 
 	tree.rootNode = node
 	tree.InitializeLoader()
@@ -204,7 +206,7 @@ func (tree *GridTree) launchPointLoader(waitGroup *sync.WaitGroup) {
 	for {
 		val, shouldContinue := tree.Loader.GetNext()
 		if val != nil {
-			tree.rootNode.AddDataPoint(val)
+			tree.rootNode.AddDataPoint(val, true)
 		}
 		if !shouldContinue {
 			break
@@ -228,6 +230,21 @@ func (tree *GridTree) MergeSmallNode(minPointsNum int32) error {
 	}
 
 	if err := tree.rootNode.MergeSmallChildren(int64(minPointsNum)); err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
+}
+
+func (tree *GridTree) SplitBigNode(maxPointsNum int32) error {
+	if !tree.built {
+		err := errors.New("octree does not built")
+		log.Fatal(err)
+		return err
+	}
+
+	if err := tree.rootNode.SplitBigNode(maxPointsNum); err != nil {
 		log.Fatal(err)
 		return err
 	}

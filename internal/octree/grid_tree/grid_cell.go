@@ -31,7 +31,7 @@ func (gc *gridCell) getCellCenter() (float64, float64, float64) {
 }
 
 // submits a point to the cell, eventually returning a pointer to the point pushed out.
-func (gc *gridCell) pushPoint(point *data.Point) *data.Point {
+func (gc *gridCell) pushPoint(point *data.Point, isFollowSizeThreshold bool) *data.Point {
 	gc.Lock()
 	if gc.points == nil {
 		gc.storeFirstPoint(point)
@@ -39,7 +39,7 @@ func (gc *gridCell) pushPoint(point *data.Point) *data.Point {
 		return nil
 	}
 
-	if gc.isSizeBelowThreshold() {
+	if isFollowSizeThreshold && gc.isSizeBelowThreshold() {
 		gc.points = append(gc.points, point)
 		gc.Unlock()
 		return nil
