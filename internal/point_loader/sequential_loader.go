@@ -5,7 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
 )
 
 // Stores points and returns them in order

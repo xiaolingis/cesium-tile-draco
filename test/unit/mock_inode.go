@@ -2,11 +2,11 @@ package unit
 
 import "C"
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 	"sync"
 )
 

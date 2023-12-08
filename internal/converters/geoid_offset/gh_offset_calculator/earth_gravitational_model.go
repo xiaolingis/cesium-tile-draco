@@ -2,7 +2,7 @@ package gh_offset_calculator
 
 import (
 	"bufio"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/tools"
 	"log"
 	"math"
 	"os"

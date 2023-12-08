@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
 )
 
 // Stores points and returns them shuffled according to the following strategy. points are grouped in buckets (boxes).

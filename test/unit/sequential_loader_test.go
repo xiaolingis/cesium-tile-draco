@@ -1,8 +1,8 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/point_loader"
 	"reflect"
 	"testing"
 )

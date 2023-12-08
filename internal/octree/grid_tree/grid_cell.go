@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
 )
 
 // Data structure that accepts points and stores just the one closest to its center, or if the side is too small,

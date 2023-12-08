@@ -1,4 +1,4 @@
-module github.com/mfbonfigli/gocesiumtiler
+module github.com/ecopia-map/cesium_tiler
 
 go 1.15
 

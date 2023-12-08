@@ -12,12 +12,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/tools"
 )
 
 type StandardConsumer struct {

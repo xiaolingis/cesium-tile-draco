@@ -57,7 +57,7 @@ type FlagsForCommandVerify struct {
 
 func ParseFlagsGlobal() FlagsGlobal {
 	help := defineBoolFlag("help", "h", false, "Displays this help.")
-	version := defineBoolFlag("version", "v", false, "Displays the version of gocesiumtiler.")
+	version := defineBoolFlag("version", "v", false, "Displays the version of cesium_tiler.")
 
 	flag.Parse()
 
@@ -90,7 +90,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	silent := defineBoolFlagCommand(flagCommand, "silent", "s", false, "Use to suppress all the non-error messages.")
 	logTimestamp := defineBoolFlagCommand(flagCommand, "timestamp", "t", false, "Adds timestamp to log messages.")
 	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
-	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of gocesiumtiler.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
 
 	algorithm := "grid"
 

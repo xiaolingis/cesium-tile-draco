@@ -1,7 +1,7 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/offset_elevation_corrector"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/offset_elevation_corrector"
 	"testing"
 )
 

@@ -104,7 +104,7 @@ faster in common scenarios.
 
 To show help run:
 ```
-gocesiumtiler -help
+cesium_tiler -help
 ```
 
 ### Flags
@@ -138,8 +138,8 @@ gocesiumtiler -help
   -srid int             EPSG srid code of input points. (default 4326)
   -t                    Adds timestamp to log messages. (shorthand for timestamp)
   -timestamp            Adds timestamp to log messages.
-  -v                    Displays the version of gocesiumtiler. (shorthand for version)
-  -version              Displays the version of gocesiumtiler.
+  -v                    Displays the version of cesium_tiler. (shorthand for version)
+  -version              Displays the version of cesium_tiler.
   -x float              Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples.  (shorthand for grid-max-size) (default 5)
   -z float              Vertical offset to apply to points, in meters. (shorthand for zoffset)
   -zoffset float        Vertical offset to apply to points, in meters.
@@ -149,12 +149,12 @@ Note: the "hq" flag present in versions <= 1.0.3 has been removed and replaced b
 
 ### Usage examples-linux:
 ```
-/usr/local/service/gocesiumtiler/gocesiumtiler index -i ./las2/center.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
-/usr/local/service/gocesiumtiler/gocesiumtiler index -i ./las2/right.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/center.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/right.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
 
-/usr/local/service/gocesiumtiler/gocesiumtiler index -i ./las2/ -o ./tileset-las2/ -srid=28355 -geoid -folder -recursive
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/ -o ./tileset-las2/ -srid=28355 -geoid -folder -recursive
 
-/usr/local/service/gocesiumtiler/gocesiumtiler merge -i ./tileset-las2/ -srid=28355 -geoid -grid-max-size 10.0 -grid-min-size 5.0 2>&1
+/usr/local/service/cesium-tiler/cesium_tiler merge -i ./tileset-las2/ -srid=28355 -geoid -grid-max-size 10.0 -grid-min-size 5.0 2>&1
 ```
 
 ### Usage examples-windows(deprecated):
@@ -163,11 +163,11 @@ Recursively convert all LAS files in folder `C:\las`, write output tilesets in f
 in EPSG:32633, convert elevation from above the geoid to above the ellipsoid and use the default grid sampling algorithm:
 
 ```
-gocesiumtiler -input=C:\las -output=C:\out -srid=32633 -geoid -folder -recursive
+cesium_tiler -input=C:\las -output=C:\out -srid=32633 -geoid -folder -recursive
 ```
 or, using the shorthand notation:
 ```
-gocesiumtiler -i C:\las -o C:\out -e 32633 -g -f -r
+cesium_tiler -i C:\las -o C:\out -e 32633 -g -f -r
 ```
 
 Recursively convert all LAS files in `C:\las\file.las`, write output tileset in folder `C:\out`, assume input coordinates
@@ -175,12 +175,12 @@ expressed in EPSG:4326, apply an offset of 10 meters to elevation of points and 
 using the "randombox" algorithm:
 
 ```
-gocesiumtiler -input=C:\las\file.las -output=C:\out -zoffset=10 -maxpts=100000 -algorithm=randombox
+cesium_tiler -input=C:\las\file.las -output=C:\out -zoffset=10 -maxpts=100000 -algorithm=randombox
 ```
 or, using the shorthand notation:
 
 ```
-gocesiumtiler -i C:\las\file.las -o C:\out -z 10 -m 100000 -a randombox
+cesium_tiler -i C:\las\file.las -o C:\out -z 10 -m 100000 -a randombox
 ```
 
 ### Algorithms
@@ -217,7 +217,7 @@ tells Cesium to display the Tile plus its parent.
 needed for rendering, including those already belonging to the parent tiles. In other words this mode instructs Cesium
 to only visualize this tile and not the points contained in its parent too.
 
-As a consequence in gocesiumtiler `ADD` mode results in smalled disk space as there are no duplicate points stored across
+As a consequence in cesium_tiler `ADD` mode results in smalled disk space as there are no duplicate points stored across
 LODs. Plus it is faster. In theory `REPLACE` mode might however be more memory and network efficient as Cesium can only visualize and load the
 required tile for the given LOD and not also the parent tiles, but this highly depends on how the Cesium Viewer settings
 have been configured. For this reason `ADD` mode is the default and suggested one, but one can specify `REPLACE` mode
@@ -246,7 +246,7 @@ If you have questions you can contact me at <m.federico.bonfigli@gmail.com>
 ## Versioning
 
 This library uses [SemVer](http://semver.org/) for versioning.
-For the versions available, see the [tags on this repository](https://github.com/mfbonfigli/gocesiumtiler/tags).
+For the versions available, see the [tags on this repository](https://github.com/ecopia-map/cesium_tiler/tags).
 
 ## Credits
 

@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/point_loader"
+	"github.com/ecopia-map/cesium_tiler/tools"
 )
 
 // Coordinates are stored in EPSG 3395, which is a cartesian 2D metric reference system

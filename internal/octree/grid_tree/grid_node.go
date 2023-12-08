@@ -9,9 +9,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
 )
 
 // Models a node of the octree, which can either be a leaf (a node without children nodes) or not.

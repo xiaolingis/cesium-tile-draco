@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 )
 
 type FileFinder interface {

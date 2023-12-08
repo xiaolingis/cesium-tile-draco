@@ -18,4 +18,4 @@
 output/
 
 # compile binary
-*gocesiumtiler
+*cesium_tiler

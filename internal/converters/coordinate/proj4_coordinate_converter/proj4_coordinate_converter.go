@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/tools"
 	proj "github.com/xeonx/proj4"
 )
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of the Go Cesium Point Cloud Tiler distribution (https://github.com/mfbonfigli/gocesiumtiler).
+ * This file is part of the Go Cesium Point Cloud Tiler distribution (https://github.com/ecopia-map/cesium_tiler).
  * Copyright (c) 2019 Massimo Federico Bonfigli - m.federico.bonfigli@gmail.com
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager/std_algorithm_manager"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager/std_algorithm_manager"
+	"github.com/ecopia-map/cesium_tiler/tools"
 	// "github.com/pkg/profile" // enable for profiling
 )
 

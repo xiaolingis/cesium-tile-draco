@@ -15,14 +15,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager/std_algorithm_manager"
-	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/io"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager/std_algorithm_manager"
+	lidario "github.com/ecopia-map/cesium_tiler/third_party/lasread"
+	"github.com/ecopia-map/cesium_tiler/tools"
 )
 
 type TilerMerge struct {

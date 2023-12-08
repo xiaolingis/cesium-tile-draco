@@ -6,12 +6,12 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree"
+	"github.com/ecopia-map/cesium_tiler/internal/point_loader"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 )
 
 // Represents an RandomTree of points and contains all information needed

@@ -1,8 +1,8 @@
 package geoid_elevation_corrector
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/geoid_offset"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/geoid_offset"
 	"log"
 )
 
