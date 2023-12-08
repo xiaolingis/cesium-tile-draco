@@ -1,13 +1,12 @@
-# Go Cesium Point Cloud Tiler
-![Build Status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoibSt1bmxTSGZTNHlLaS81d3ZEM3EyQXZIUXh4U0g4VjdtZUIwaUNMeEswaU5nc3A4YzZQQ2JiQ1pJbkFaVWxrcmF0TEFnRkM5WFFIbTVKQmtYSkVBTy9vPSIsIml2UGFyYW1ldGVyU3BlYyI6IjZjZ1NodXJzczJ0MlJja2UiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+# Cesium Tiler For Point Cloud
 ```
-                                             _   _ _
-  __ _  ___   ___ ___  ___(_)_   _ _ __ ___ | |_(_) | ___ _ __
- / _  |/ _ \ / __/ _ \/ __| | | | | '_   _ \| __| | |/ _ \ '__|
-| (_| | (_) | (_|  __/\__ \ | |_| | | | | | | |_| | |  __/ |
- \__, |\___/ \___\___||___/_|\__,_|_| |_| |_|\__|_|_|\___|_|
-  __| | A Cesium Point Cloud tile generator written in golang
- |___/
+               _                    _   _ _
+  ___ ___  ___(_)_   _ _ __ ___    | |_(_) | ___ _ __
+ / __/ _ \/ __| | | | | '_   _ \   | __| | |/ _ \ '__|
+| (_|  __/\__ \ | |_| | | | | | |--| |_| | |  __/ |
+ \___\___||___/_|\__,_|_| |_| |_|-- \__|_|_|\___|_|
+  A Cesium Point Cloud tile generator written in golang
+  Copyright 2023 - Ecopia Alpaca
 ```
 
 
@@ -15,6 +14,9 @@
 Go Cesium Point Cloud Tiler is a tool to convert point cloud stored as LAS files to Cesium.js 3D tiles ready to be
 streamed, automatically generating the appropriate level of details and including additional information for each point
 such as color, laser intensity and classification.
+
+The original library of this library is [gocesiumtiler](https://github.com/mfbonfigli/gocesiumtiler) and its protocol is LGPLv3
+
 
 ## Features
 Go Cesium Point Cloud Tiler automatically handles coordinate conversion to the format required by Cesium and can also
@@ -32,6 +34,12 @@ propeties named `INTENSITY` and `CLASSIFICATION`.
 
 
 ## Changelog
+
+##### Version 2.0.0
+* Rename command:tiler to tiler-index
+* Added command tiler-merge
+* Added command tiler-verify
+* Refactor tiler command structure
 
 ##### Version 1.2.3.1
 * Rename command:tiler to tiler-index
@@ -94,7 +102,7 @@ To launch the tests use the command `go test ./test/... -v`.
 <b>The code expects to find a copy of the [static](assets) folder in the same path where the compiled executable runs.</b>
 
 > Alternatively, from version 1.1.1 you can also specify the assets folder location (i.e. the folder that contains the `assets` folder)
-by setting the `GOCESIUMTILER_WORKDIR` environment variable in your system.
+by setting the `CESIUM_TILER_WORKDIR` environment variable in your system.
 
 To run just execute the binary tool with the appropriate flags.
 
@@ -110,51 +118,69 @@ cesium_tiler -help
 ### Flags
 
 ```
+cesium_tiler index --help
   -8bit                 Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)
-  -a string             Sets the algorithm to use. Must be one of Grid,Random,RandomBox. Grid algorithm is highly suggested, others are deprecated and will be removed in future versions. (shorthand for algorithm) (default "grid")
-  -algorithm string     Sets the algorithm to use. Must be one of Grid,Random,RandomBox. Grid algorithm is highly suggested, others are deprecated and will be removed in future versions. (default "grid")
   -b                    Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth). (shorthand for -8bit)
-  -e int                EPSG srid code of input points. (shorthand for srid) (default 4326)
-  -f                    Enables processing of all las files from input folder. Input must be a folder if specified (shorthand for folder)
   -folder               Enables processing of all las files from input folder. Input must be a folder if specified
-  -g                    Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid. (shorthand for geoid)
-  -geoid                Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.
+  -f                    Enables processing of all las files from input folder. Input must be a folder if specified (shorthand for folder)
+  -geoid                Enables Geoid to Ellipsoid elevation correction.
+                        Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.
+  -g                    Enables Geoid to Ellipsoid elevation correction.
+                        Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid. (shorthand for geoid)
   -grid-max-size float  Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples.  (default 5)
-  -grid-min-size float  Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile.  (default 0.15)
-  -h                    Displays this help. (shorthand for help)
-  -help                 Displays this help.
-  -i string             Specifies the input las file/folder. (shorthand for input)
-  -input string         Specifies the input las file/folder.
-  -m int                Max number of points per tile for the Random and RandomBox algorithms. (shorthand for maxpts) (default 50000)
-  -maxpts int           Max number of points per tile for the Random and RandomBox algorithms. (default 50000)
-  -n float              Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile.  (shorthand for grid-min-size) (default 0.15)
-  -o string             Specifies the output folder where to write the tileset data. (shorthand for output)
-  -output string        Specifies the output folder where to write the tileset data.
-  -r                    Enables recursive lookup for all .las files inside the subfolders (shorthand for recursive)
-  -recursive            Enables recursive lookup for all .las files inside the subfolders
-  -refine-mode          Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite. (default "ADD")
-  -s                    Use to suppress all the non-error messages. (shorthand for silent)
-  -silent               Use to suppress all the non-error messages.
-  -srid int             EPSG srid code of input points. (default 4326)
-  -t                    Adds timestamp to log messages. (shorthand for timestamp)
-  -timestamp            Adds timestamp to log messages.
-  -v                    Displays the version of cesium_tiler. (shorthand for version)
-  -version              Displays the version of cesium_tiler.
   -x float              Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples.  (shorthand for grid-max-size) (default 5)
-  -z float              Vertical offset to apply to points, in meters. (shorthand for zoffset)
+  -grid-min-size float  Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile.  (default 0.15)
+  -n float              Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile.  (shorthand for grid-min-size) (default 0.15)
   -zoffset float        Vertical offset to apply to points, in meters.
+  -z float              Vertical offset to apply to points, in meters. (shorthand for zoffset)
+  -input string         Specifies the input las file/folder
+  -i string             Specifies the input las file/folder. (shorthand for input)
+  -points-min-num int   Min number of points per tile for the Grid algorithms. (default 10000)
+  -points-max-num int   Max number of points per tile for the Grid algorithms. (default 160000)
+  -output string        Specifies the output folder where to write the tileset data.
+  -o string             Specifies the output folder where to write the tileset data. (shorthand for output)
+  -recursive            Enables recursive lookup for all .las files inside the subfolders
+  -r                    Enables recursive lookup for all .las files inside the subfolders (shorthand for recursive)
+  -refine-mode          Type of refine mode, can be 'ADD' or 'REPLACE'.
+                        'ADD' means that child tiles will not contain the parent tiles points.
+                        'REPLACE' means that they will also contain the parent tiles points.
+                        ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite. (default "ADD")
+  -silent               Use to suppress all the non-error messages.
+  -s                    Use to suppress all the non-error messages. (shorthand for silent)
+  -srid int             EPSG srid code of input points. (default 4326)
+  -e int                EPSG srid code of input points. (shorthand for srid) (default 4326)
+  -timestamp            Adds timestamp to log messages.
+  -t                    Adds timestamp to log messages. (shorthand for timestamp)
+  -help                 Displays this help.
+  -h                    Displays this help. (shorthand for help)
+  -version              Displays the version of cesium_tiler.
+  -v                    Displays the version of cesium_tiler. (shorthand for version)
 ```
 
 Note: the "hq" flag present in versions <= 1.0.3 has been removed and replaced by the "randombox" setting for the `-algorithm` flag.
 
 ### Usage examples-linux:
 ```
-/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/center.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
-/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/right.las -o ./tileset/ -srid=28355 -geoid -folder -recursive
+#### indexing
 
-/usr/local/service/cesium-tiler/cesium_tiler index -i ./las2/ -o ./tileset-las2/ -srid=28355 -geoid -folder -recursive
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las/center.las -o ./tileset/ -srid=32617 -geoid -8bit -folder -recursive
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las/right.las -o ./tileset/ -srid=32617 -geoid -8bit -folder -recursive
 
-/usr/local/service/cesium-tiler/cesium_tiler merge -i ./tileset-las2/ -srid=28355 -geoid -grid-max-size 10.0 -grid-min-size 5.0 2>&1
+/usr/local/service/cesium-tiler/cesium_tiler index -i ./las/ -o ./tileset-las/ -srid=32617 -geoid -8bit -folder -recursive
+
+#### merging
+
+/usr/local/service/cesium-tiler/cesium_tiler merge -i ./tileset-las/ -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
+
+/usr/local/service/cesium-tiler/cesium_tiler merge-tree -i ./tileset-las/ -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
+/usr/local/service/cesium-tiler/cesium_tiler merge-children -i ./tileset-las/chunk-tileset-center/ -srid=32617 -geoid -8bit -grid-max-size=1.0 -grid-min-size=0.25
+
+#### verify for debug
+
+/usr/local/service/cesium-tiler/cesium_tiler verify-las-merge -i /tmp/ -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
+
+/usr/local/service/cesium-tiler/cesium_tiler verify-las -i /tmp/merged.las -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
+
 ```
 
 ### Usage examples-windows(deprecated):
@@ -241,16 +267,12 @@ the input point cloud parameters.
 
 Contributors and their ideas are welcome.
 
-If you have questions you can contact me at <m.federico.bonfigli@gmail.com>
+If you have questions you can contact me at <ecopia-alpaca@ecopiax.com>
 
 ## Versioning
 
 This library uses [SemVer](http://semver.org/) for versioning.
 For the versions available, see the [tags on this repository](https://github.com/ecopia-map/cesium_tiler/tags).
-
-## Credits
-
-**Massimo Federico Bonfigli** -  [Github](https://github.com/mfbonfigli)
 
 ## License
 
@@ -260,7 +282,7 @@ The software uses third party code and libraries. Their licenses can be found in
 [LICENSE-3RD-PARTIES.md](LICENSE-3RD-PARTIES.md) file.
 
 ## Acknowledgments
-
+* gocesiumtiler [github](https://github.com/mfbonfigli/gocesiumtiler)
 * Cesium JS library [github](https://github.com/AnalyticalGraphicsInc/cesium)
 * TUM-GIS cesium point cloud generator [github](https://github.com/tum-gis/cesium-point-cloud-generator)
 * Simon Hege's golang bindings for Proj.4 library [github](https://github.com/xeonx/proj4)

@@ -18,7 +18,7 @@ func OpenFileOrFail(filePath string) *os.File {
 }
 
 func GetRootFolder() string {
-	assetsFromEnv := os.Getenv("GOCESIUMTILER_WORKDIR")
+	assetsFromEnv := os.Getenv("CESIUM_TILER_WORKDIR")
 	if assetsFromEnv != "" {
 		return assetsFromEnv
 	} else if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {

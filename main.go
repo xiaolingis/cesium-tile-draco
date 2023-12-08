@@ -1,6 +1,6 @@
 /*
  * This file is part of the Go Cesium Point Cloud Tiler distribution (https://github.com/ecopia-map/cesium_tiler).
- * Copyright (c) 2019 Massimo Federico Bonfigli - m.federico.bonfigli@gmail.com
+ * Copyright (c) 2023 Ecopia Alpaca - ecopia-alpaca@ecopiax.com
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License Version 3 as
@@ -37,16 +37,16 @@ import (
 	// "github.com/pkg/profile" // enable for profiling
 )
 
-const VERSION = "1.2.3"
+const VERSION = "2.0.0"
 
 const logo = `
-                           _                 _   _ _
-  __ _  ___   ___ ___  ___(_)_   _ _ __ ___ | |_(_) | ___ _ __
- / _  |/ _ \ / __/ _ \/ __| | | | | '_   _ \| __| | |/ _ \ '__|
-| (_| | (_) | (_|  __/\__ \ | |_| | | | | | | |_| | |  __/ |
- \__, |\___/ \___\___||___/_|\__,_|_| |_| |_|\__|_|_|\___|_|
-  __| | A Cesium Point Cloud tile generator written in golang
- |___/  Copyright YYYY - Massimo Federico Bonfigli
+               _                    _   _ _
+  ___ ___  ___(_)_   _ _ __ ___    | |_(_) | ___ _ __
+ / __/ _ \/ __| | | | | '_   _ \   | __| | |/ _ \ '__|
+| (_|  __/\__ \ | |_| | | | | | |--| |_| | |  __/ |
+ \___\___||___/_|\__,_|_| |_| |_|-- \__|_|_|\___|_|
+  A Cesium Point Cloud tile generator written in golang
+  Copyright 2023 - Ecopia Alpaca
 `
 
 func main() {
