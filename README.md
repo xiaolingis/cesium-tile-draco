@@ -145,6 +145,7 @@ cesium_tiler index --help
                         'ADD' means that child tiles will not contain the parent tiles points.
                         'REPLACE' means that they will also contain the parent tiles points.
                         ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite. (default "ADD")
+  -use-edge-calculate   Assumes use chunk-edge x/y/z to calculate tileset geometricError. (default true)
   -silent               Use to suppress all the non-error messages.
   -s                    Use to suppress all the non-error messages. (shorthand for silent)
   -srid int             EPSG srid code of input points. (default 4326)
@@ -170,9 +171,8 @@ Note: the "hq" flag present in versions <= 1.0.3 has been removed and replaced b
 
 #### merging
 
-/usr/local/service/cesium-tiler/cesium_tiler merge -i ./tileset-las/ -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
-
 /usr/local/service/cesium-tiler/cesium_tiler merge-tree -i ./tileset-las/ -srid=32617 -geoid -8bit -grid-max-size 1.0 -grid-min-size 0.25
+
 /usr/local/service/cesium-tiler/cesium_tiler merge-children -i ./tileset-las/chunk-tileset-center/ -srid=32617 -geoid -8bit -grid-max-size=1.0 -grid-min-size=0.25
 
 #### verify for debug

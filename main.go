@@ -37,7 +37,7 @@ import (
 	// "github.com/pkg/profile" // enable for profiling
 )
 
-const VERSION = "2.0.0"
+const version = "v2.0.0"
 
 const logo = `
                _                    _   _ _
@@ -49,12 +49,25 @@ const logo = `
   Copyright 2023 - Ecopia Alpaca
 `
 
+var codeVersion string
+
 func main() {
-	log.SetPrefix("[alpaca] ")
+	log.SetPrefix(fmt.Sprintf("[alpaca-%s] ", GetCodeVersion()))
 	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
 
 	flagsGlobal := tools.ParseFlagsGlobal()
 	log.Println(tools.FmtJSONString(flagsGlobal))
+
+	// Prints the command line flag description
+	if *flagsGlobal.Help {
+		showHelp()
+		return
+	}
+
+	if *flagsGlobal.Version {
+		printVersion()
+		return
+	}
 
 	args := flag.Args()
 	if len(args) == 0 {
@@ -88,7 +101,7 @@ func mainCommandIndex(args []string) {
 
 	// Prints the command line flag description
 	if *flags.Help {
-		showHelp()
+		showHelpForSubCommand(flags.FlagCommand)
 		return
 	}
 
@@ -106,6 +119,8 @@ func mainCommandIndex(args []string) {
 	if !*flags.LogTimestamp {
 		tools.DisableLoggerTimestamp()
 	}
+
+	log.Println("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -172,6 +187,17 @@ func validateOptionsForCommandIndex(opts *tiler.TilerOptions, flags *tools.Flags
 func mainCommandMerge(args []string, cmd string) {
 	flags := tools.ParseFlagsForCommandMerge(args)
 
+	// Prints the command line flag description
+	if *flags.Help {
+		showHelpForSubCommand(flags.FlagCommand)
+		return
+	}
+
+	if *flags.Version {
+		printVersion()
+		return
+	}
+
 	log.Println("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
@@ -230,6 +256,17 @@ func validateOptionsForCommandMerge(opts *tiler.TilerOptions, flags *tools.Flags
 
 func mainCommandVerifyLas(args []string, cmd string) {
 	flags := tools.ParseFlagsForCommandVerify(args)
+
+	// Prints the command line flag description
+	if *flags.Help {
+		showHelpForSubCommand(flags.FlagCommand)
+		return
+	}
+
+	if *flags.Version {
+		printVersion()
+		return
+	}
 
 	log.Println("flags", tools.FmtJSONString(flags))
 
@@ -301,15 +338,40 @@ func printLogo() {
 func showHelp() {
 	printLogo()
 	fmt.Println("***")
-	fmt.Println("GoCesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
+	fmt.Println("CesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
 	printVersion()
 	fmt.Println("***")
+	fmt.Println("")
+	fmt.Println("Usage: ./cesium_tiler < index | merge-tree | merge-children | verify-las | verify-las-merge >")
 	fmt.Println("")
 	fmt.Println("Command line flags: ")
 	flag.CommandLine.SetOutput(os.Stdout)
 	flag.PrintDefaults()
 }
 
+func showHelpForSubCommand(flagCommand *flag.FlagSet) {
+	printLogo()
+	fmt.Println("***")
+	fmt.Println("CesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
+	printVersion()
+	fmt.Println("***")
+	fmt.Println("")
+	fmt.Println("Command line flags: ")
+	flagCommand.SetOutput(os.Stdout)
+	flagCommand.PrintDefaults()
+}
+
 func printVersion() {
-	fmt.Println("v." + VERSION)
+	fmt.Printf("%s-%s\n", version, codeVersion)
+}
+
+func GetCodeVersion() string {
+	if len(codeVersion) >= 8 {
+		return codeVersion[:8]
+	} else if len(codeVersion) > 0 {
+		return codeVersion
+	} else {
+		return "Unknow"
+	}
+
 }

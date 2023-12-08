@@ -35,21 +35,30 @@ type TilerFlags struct {
 }
 
 type FlagsForCommandIndex struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
+
 	Output                         *string
 	UseEdgeCalculateGeometricError *bool
 	Silent                         *bool
 	LogTimestamp                   *bool
-	Help                           *bool
-	Version                        *bool
 }
 
 type FlagsForCommandMerge struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
 }
 
 type FlagsForCommandVerify struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
+
 	Output      *string
 	OffsetBegin *int
 	OffsetEnd   *int
@@ -97,6 +106,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	flagCommand.Parse(args)
 
 	return FlagsForCommandIndex{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -136,6 +146,9 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
 
+	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
+
 	folderProcessing := true
 
 	minNumPointsPerNode := 10000
@@ -145,6 +158,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	flagCommand.Parse(args)
 
 	return FlagsForCommandMerge{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -160,6 +174,8 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                refineMode,
 		},
+		Help:    help,
+		Version: version,
 	}
 }
 
@@ -178,6 +194,9 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 10.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 
+	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
+
 	offsetBegin := 0
 	offsetEnd := -1
 
@@ -191,6 +210,7 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 	flagCommand.Parse(args)
 
 	return FlagsForCommandVerify{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -206,6 +226,8 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                &refineMode,
 		},
+		Help:        help,
+		Version:     version,
 		Output:      output,
 		OffsetBegin: &offsetBegin,
 		OffsetEnd:   &offsetEnd,
