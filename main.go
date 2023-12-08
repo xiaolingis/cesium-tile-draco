@@ -124,6 +124,7 @@ func mainCommandIndex(args []string) {
 		CellMinSize:            *tilerFlags.GridCellMinSize,
 		CellMaxSize:            *tilerFlags.GridCellMaxSize,
 		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+		Draco:                  *tilerFlags.Draco,
 
 		Command: tools.CommandIndex,
 		TilerIndexOptions: &tiler.TilerIndexOptions{
@@ -192,6 +193,7 @@ func mainCommandMerge(args []string, cmd string) {
 		CellMinSize:            *tilerFlags.GridCellMinSize,
 		CellMaxSize:            *tilerFlags.GridCellMaxSize,
 		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
+		Draco:                  *tilerFlags.Draco,
 		TilerMergeOptions: &tiler.TilerMergeOptions{
 			Output: "",
 		},

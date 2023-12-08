@@ -3,6 +3,13 @@ package unit
 import (
 	"encoding/binary"
 	"encoding/json"
+	"io/ioutil"
+	"math"
+	"os"
+	"path"
+	"sync"
+	"testing"
+
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters/coordinate/proj4_coordinate_converter"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
@@ -10,12 +17,6 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/tools"
-	"io/ioutil"
-	"math"
-	"os"
-	"path"
-	"sync"
-	"testing"
 )
 
 func TestConsumerSinglePointNoChildrenEPSG4326(t *testing.T) {
@@ -54,7 +55,7 @@ func TestConsumerSinglePointNoChildrenEPSG4326(t *testing.T) {
 	waitGroup.Add(1)
 
 	// start consumer
-	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd)
+	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd, false)
 	go consumer.Consume(workChannel, errorChannel, &waitGroup)
 
 	// inject work unit in channel
@@ -290,7 +291,7 @@ func TestConsumerSinglePointNoChildrenEPSG32633(t *testing.T) {
 	waitGroup.Add(1)
 
 	// start consumer
-	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd)
+	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd, false)
 	go consumer.Consume(workChannel, errorChannel, &waitGroup)
 
 	// inject work unit in channel
@@ -541,7 +542,7 @@ func TestConsumerOneChild(t *testing.T) {
 	waitGroup.Add(1)
 
 	// start consumer
-	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd)
+	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeAdd, false)
 	go consumer.Consume(workChannel, errorChannel, &waitGroup)
 
 	// inject work unit in channel
@@ -825,7 +826,7 @@ func TestConsumerOneChildRefineModeReplace(t *testing.T) {
 	waitGroup.Add(1)
 
 	// start consumer
-	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeReplace)
+	consumer := io.NewStandardConsumer(proj4_coordinate_converter.NewProj4CoordinateConverter(), tiler.RefineModeReplace, false)
 	go consumer.Consume(workChannel, errorChannel, &waitGroup)
 
 	// inject work unit in channel

@@ -32,6 +32,7 @@ type TilerFlags struct {
 	GridCellMaxSize           *float64 `json:"grid_max_size"`
 	GridCellMinSize           *float64 `json:"grid_min_size"`
 	RefineMode                *string  `json:"refine_mode"`
+	Draco                     *bool
 }
 
 type FlagsForCommandIndex struct {
@@ -84,6 +85,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 5.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 0.15, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+	draco := defineBoolFlagCommand(flagCommand, "draco", "", false, "Use Draco algorithm to compress xyz and color")
 
 	useEdgeCalculateGeometricError := defineBoolFlagCommand(flagCommand, "use-edge-calculate", "d", true, "Assumes use chunk-edge x/y/z to calculate tileset geometricError")
 	silent := defineBoolFlagCommand(flagCommand, "silent", "s", false, "Use to suppress all the non-error messages.")
@@ -111,6 +113,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 			GridCellMaxSize:           gridCellMaxSize,
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                refineMode,
+			Draco:                     draco,
 		},
 		Output:                         output,
 		UseEdgeCalculateGeometricError: useEdgeCalculateGeometricError,
@@ -135,6 +138,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 10.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
 	refineMode := defineStringFlagCommand(flagCommand, "refine-mode", "", "ADD", "Type of refine mode, can be 'ADD' or 'REPLACE'. 'ADD' means that child tiles will not contain the parent tiles points. 'REPLACE' means that they will also contain the parent tiles points. ADD implies less disk space but more network overhead when fetching the data, REPLACE is the opposite.")
+	draco := defineBoolFlagCommand(flagCommand, "draco", "", false, "Use Draco algorithm to compress xyz and color")
 
 	folderProcessing := true
 
@@ -159,6 +163,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			GridCellMaxSize:           gridCellMaxSize,
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                refineMode,
+			Draco:                     draco,
 		},
 	}
 }

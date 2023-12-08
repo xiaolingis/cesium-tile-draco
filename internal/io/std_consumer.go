@@ -1,20 +1,25 @@
 package io
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
 	"path"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
+	"github.com/mfbonfigli/gocesiumtiler/internal/ply"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
 	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
@@ -22,12 +27,14 @@ import (
 type StandardConsumer struct {
 	coordinateConverter converters.CoordinateConverter
 	refineMode          tiler.RefineMode
+	draco               bool
 }
 
-func NewStandardConsumer(coordinateConverter converters.CoordinateConverter, refineMode tiler.RefineMode) *StandardConsumer {
+func NewStandardConsumer(coordinateConverter converters.CoordinateConverter, refineMode tiler.RefineMode, draco bool) *StandardConsumer {
 	return &StandardConsumer{
 		coordinateConverter: coordinateConverter,
 		refineMode:          refineMode,
+		draco:               draco,
 	}
 }
 
@@ -70,10 +77,18 @@ func (c *StandardConsumer) Consume(workchan chan *WorkUnit, errchan chan error, 
 // Takes a workunit and writes the corresponding content.pnts and tileset.json files
 func (c *StandardConsumer) doWork(workUnit *WorkUnit) error {
 	// writes the content.pnts file
-	err := c.writeBinaryPntsFile(*workUnit)
-	if err != nil {
-		return err
+	if c.draco {
+		err := c.writeBinaryPntsFileWithDraco(*workUnit)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := c.writeBinaryPntsFile(*workUnit)
+		if err != nil {
+			return err
+		}
 	}
+
 	if !workUnit.Node.IsLeaf() || workUnit.Node.IsRoot() {
 		// if the node has children also writes the tileset.json file
 		err := c.writeTilesetJsonFile(*workUnit)
@@ -82,6 +97,126 @@ func (c *StandardConsumer) doWork(workUnit *WorkUnit) error {
 		}
 	}
 	return nil
+}
+
+func (c *StandardConsumer) invokeDracoEncoder(
+	programLocation, plyInputFileLocation, outputFileLocation string, compressionLevel int,
+) error {
+	startTime := time.Now()
+	cmdParams := []string{
+		"-point_cloud",
+		"-i", plyInputFileLocation,
+		"-o", outputFileLocation,
+		"-qp", strconv.Itoa(0),
+		"-cl", strconv.Itoa(compressionLevel),
+	}
+
+	runCmd := exec.Command(programLocation, cmdParams...)
+	log.Println("start run draco_encoder cmd", runCmd.String())
+
+	var cmdStdout, cmdStderr bytes.Buffer
+	runCmd.Stdout = &cmdStdout
+	runCmd.Stderr = &cmdStderr
+
+	if err := runCmd.Run(); err != nil {
+		log.Println("run failed", runCmd.String(), "cmd-stdout", cmdStdout.String(), "cmd-stderr", cmdStderr.String(), err.Error())
+		return err
+	}
+	log.Println("run draco_encoder cmd success", runCmd.String(), "latency_ms", time.Since(startTime).Milliseconds())
+	return nil
+}
+
+func (c *StandardConsumer) writeBinaryPntsFileWithDraco(workUnit WorkUnit) error {
+	parentFolder := workUnit.BasePath
+	node := workUnit.Node
+
+	// Create base folder if it does not exist
+	err := tools.CreateDirectoryIfDoesNotExist(parentFolder)
+	if err != nil {
+		return err
+	}
+
+	intermediatePointData, err := c.generateIntermediateDataForPnts(node)
+	if err != nil {
+		return err
+	}
+
+	// Evaluating average X, Y, Z to express coords relative to tile center
+	averageXYZ := c.computeAverageXYZ(intermediatePointData)
+
+	// Normalizing coordinates relative to average
+	c.subtractXYZFromIntermediateDataCoords(intermediatePointData, averageXYZ)
+
+	// write ply file
+	plyFileName := "content.ply"
+	plyFilePath := path.Join(parentFolder, plyFileName)
+	if err := c.writePlyFile(plyFilePath, intermediatePointData); err != nil {
+		log.Println("Wrote PLY failed.", err.Error())
+		return err
+	}
+
+	// generate Draco Encoder binary
+	programLocation := "/workerdir/gocesiumtiler/draco_encoder"
+	plyInputFileLocation := path.Join(parentFolder, plyFileName)
+	outputFileName := "content.drc"
+	drcFilePath := path.Join(parentFolder, outputFileName)
+	compressionLevel := 10
+	if err := c.invokeDracoEncoder(programLocation, plyInputFileLocation, drcFilePath, compressionLevel); err != nil {
+		log.Println("invokeDracoEncoder failed.", err.Error())
+		return err
+	}
+
+	dracoContent, err := ioutil.ReadFile(drcFilePath)
+	if err != nil {
+		fmt.Printf("file error:%s\n", err.Error())
+	}
+	fmt.Println("ReadFile success")
+
+	// Feature table
+	featureTableStr := c.generateFeatureTableJsonContentWithDraco(
+		averageXYZ[0], averageXYZ[1], averageXYZ[2], intermediatePointData.numPoints, 0, len(dracoContent),
+	)
+	featureTableLen := len(featureTableStr)
+	outputByte := c.generatePntsByteArrayWithDraco([]byte(featureTableStr), featureTableLen, []byte{}, 0, dracoContent, len(dracoContent))
+
+	fmt.Println("generate from generatePntsByteArrayWithDraco")
+
+	// Write binary content to file
+	pntsFilePath := path.Join(parentFolder, "content.pnts")
+	err = ioutil.WriteFile(pntsFilePath, outputByte, 0777)
+
+	if err != nil {
+		return err
+	}
+
+	// Delete temporary ply file
+	if err := os.Remove(plyFilePath); err != nil {
+		log.Println("delete temporary drc file failed.", err.Error())
+	}
+	// Delete temporary drc file
+	if err := os.Remove(drcFilePath); err != nil {
+		log.Println("delete temporary drc file failed.", err.Error())
+	}
+
+	return nil
+}
+
+func (c *StandardConsumer) writePlyFile(filePath string, intermediatePointData *intermediateData) error {
+	// generate vertex info
+	length := intermediatePointData.numPoints
+	verts := make([]ply.Vertex, length)
+	for i := 0; i < intermediatePointData.numPoints; i++ {
+		verts[i] = ply.Vertex{
+			X: float32(intermediatePointData.coords[i*3]),
+			Y: float32(intermediatePointData.coords[i*3+1]),
+			Z: float32(intermediatePointData.coords[i*3+2]),
+			R: intermediatePointData.colors[i*3],
+			G: intermediatePointData.colors[i*3+1],
+			B: intermediatePointData.colors[i*3+2],
+		}
+	}
+
+	return ply.WritePlyFile(filePath, verts)
 }
 
 // Writes a content.pnts binary files from the given WorkUnit
@@ -235,6 +370,25 @@ func (c *StandardConsumer) generatePntsByteArray(intermediateData *intermediateD
 	return outputByte
 }
 
+func (c *StandardConsumer) generatePntsByteArrayWithDraco(
+	featureTableBytes []byte, featureTableLen int, batchTableBytes []byte, batchTableLen int, dracoBytes []byte, dracoByteLength int,
+) []byte {
+	outputByte := make([]byte, 0)
+	outputByte = append(outputByte, []byte("pnts")...)                 // magic
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(1)...) // version number
+	byteLength := 28 + featureTableLen + dracoByteLength
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(byteLength)...)
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(featureTableLen)...) // feature table length
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(dracoByteLength)...) // feature table binary length
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(batchTableLen)...)   // batch table length
+	outputByte = append(outputByte, tools.ConvertIntToByteArray(0)...)               // batch table binary length
+	outputByte = append(outputByte, featureTableBytes...)                            // feature table
+	outputByte = append(outputByte, batchTableBytes...)                              // batch table
+	outputByte = append(outputByte, dracoBytes...)                                   // 3DTILES_draco_point_compression
+
+	return outputByte
+}
+
 func (c *StandardConsumer) computeAverageXYZ(intermediatePointData *intermediateData) []float64 {
 	var avgX, avgY, avgZ float64
 
@@ -256,6 +410,22 @@ func (c *StandardConsumer) subtractXYZFromIntermediateDataCoords(intermediatePoi
 		intermediatePointData.coords[i*3+1] -= xyz[1]
 		intermediatePointData.coords[i*3+2] -= xyz[2]
 	}
+}
+
+func (c *StandardConsumer) generateFeatureTableJsonContentWithDraco(x, y, z float64, pointNo int, spaceNo int, dracoByteLength int) string {
+	sb := ""
+	sb += "{\"POINTS_LENGTH\":" + strconv.Itoa(pointNo) + ","
+	sb += "\"RTC_CENTER\":[" + fmt.Sprintf("%f", x) + strings.Repeat("0", spaceNo)
+	sb += "," + fmt.Sprintf("%f", y) + "," + fmt.Sprintf("%f", z) + "],"
+	sb += "\"POSITION\":" + "{\"byteOffset\":" + "0" + "},"
+	sb += "\"RGB\":" + "{\"byteOffset\":" + "0" + "},"
+	sb += "\"extensions\":" + "{\"3DTILES_draco_point_compression\":{\"byteLength\":" + strconv.Itoa(dracoByteLength) + ",\"byteOffset\":0,\"properties\":{\"POSITION\":0,\"RGB\":1}}}}"
+	headerByteLength := len([]byte(sb))
+	paddingSize := headerByteLength % 4
+	if paddingSize != 0 {
+		return c.generateFeatureTableJsonContentWithDraco(x, y, z, pointNo, 4-paddingSize, dracoByteLength)
+	}
+	return sb
 }
 
 // Generates the json representation of the feature table

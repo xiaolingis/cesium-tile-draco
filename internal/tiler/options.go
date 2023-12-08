@@ -57,6 +57,7 @@ type TilerOptions struct {
 	CellMaxSize            float64    // Max cell size for grid algorithm
 	CellMinSize            float64    // Min cell size for grid algorithm
 	RefineMode             RefineMode // Refine mode to use to generate the tileset
+	Draco                  bool       // if true use Draco algorithm to compress xyz and color
 
 	Command            string
 	TilerIndexOptions  *TilerIndexOptions
