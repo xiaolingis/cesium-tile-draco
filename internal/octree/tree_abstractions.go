@@ -25,7 +25,7 @@ type INode interface {
 	TotalNumberOfPoints() int64
 	NumberOfPoints() int32
 	IsLeaf() bool
-	IsInitialized() bool
+	IsChildrenInitialized() bool
 	ComputeGeometricError() float64
 	GetParent() INode
 	GetBoundingBox() *geometry.BoundingBox

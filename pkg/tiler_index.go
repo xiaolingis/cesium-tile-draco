@@ -19,28 +19,24 @@ import (
 	"github.com/mfbonfigli/gocesiumtiler/tools"
 )
 
-type ITiler interface {
-	RunTiler(opts *tiler.TilerOptions) error
-}
-
-type Tiler struct {
+type TilerIndex struct {
 	fileFinder       tools.FileFinder
 	algorithmManager algorithm_manager.AlgorithmManager
 }
 
-func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) ITiler {
-	return &Tiler{
+func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) tiler.ITiler {
+	return &TilerIndex{
 		fileFinder:       fileFinder,
 		algorithmManager: algorithmManager,
 	}
 }
 
 // Starts the tiling process
-func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
+func (tilerIndex *TilerIndex) RunTiler(opts *tiler.TilerOptions) error {
 	log.Println("Preparing list of files to process...")
 
 	// Prepare list of files to process
-	lasFiles := tiler.fileFinder.GetLasFilesToProcess(opts)
+	lasFiles := tilerIndex.fileFinder.GetLasFilesToProcess(opts)
 	log.Println("las_file list", lasFiles)
 	for i, filePath := range lasFiles {
 		log.Printf("las_file path %d [%s]", i+1, filePath)
@@ -49,20 +45,20 @@ func (tiler *Tiler) RunTiler(opts *tiler.TilerOptions) error {
 	// load las points in octree buffer
 	for i, filePath := range lasFiles {
 		// Define point_loader strategy
-		var tree = tiler.algorithmManager.GetTreeAlgorithm()
+		var tree = tilerIndex.algorithmManager.GetTreeAlgorithm()
 		tools.LogOutput("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFiles)))
-		tiler.processLasFile(filePath, opts, tree)
+		tilerIndex.processLasFile(filePath, opts, tree)
 
 		// tree.Clear()
 	}
-	tiler.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
+	tilerIndex.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
 
 	return nil
 }
 
-func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) {
+func (tilerIndex *TilerIndex) processLasFile(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) {
 	// Create empty octree
-	lasFileLoader, err := tiler.readLasData(filePath, opts, tree)
+	lasFileLoader, err := tilerIndex.readLasData(filePath, opts, tree)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,17 +69,17 @@ func (tiler *Tiler) processLasFile(filePath string, opts *tiler.TilerOptions, tr
 		// lasFileLoader.Tree = nil
 	}()
 
-	tiler.prepareDataStructure(tree, opts)
+	tilerIndex.prepareDataStructure(tree, opts)
 
 	subfolder := fmt.Sprintf("%s%s", tools.ChunkTilesetFilePrefix, getFilenameWithoutExtension(filePath))
-	tiler.exportToCesiumTileset(tree, opts, subfolder)
+	tilerIndex.exportToCesiumTileset(tree, opts, subfolder)
 
-	tiler.exportRootNodeLas(tree, opts, subfolder, lasFileLoader.LasFile)
+	tilerIndex.exportRootNodeLas(tree, opts, subfolder, lasFileLoader.LasFile)
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 }
 
-func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
+func (tilerIndex *TilerIndex) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
@@ -104,7 +100,7 @@ func (tiler *Tiler) readLasData(filePath string, opts *tiler.TilerOptions, tree 
 	return lasFileLoader, nil
 }
 
-func (tiler *Tiler) prepareDataStructure(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
+func (tilerIndex *TilerIndex) prepareDataStructure(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 
@@ -112,18 +108,31 @@ func (tiler *Tiler) prepareDataStructure(octree *grid_tree.GridTree, opts *tiler
 		log.Fatal(err)
 	}
 
+	if opts.MaxNumPointsPerNode < 8*opts.MinNumPointsPerNode {
+		err := fmt.Errorf("MaxNumPoints shoud be greater than 8 * MinNumPoints")
+		log.Fatal(err)
+	}
+
+	log.Println("split-big-node for tree...")
+	if err := octree.SplitBigNode(opts.MaxNumPointsPerNode); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("split-big-node for tree finished")
+
+	log.Println("merge-small-node for tree...")
 	if err := octree.MergeSmallNode(opts.MinNumPointsPerNode); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("merge-small-node for tree finished")
 
 	rootNode := octree.GetRootNode()
 	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
 
 }
 
-func (tiler *Tiler) exportToCesiumTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string) {
+func (tilerIndex *TilerIndex) exportToCesiumTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string) {
 	tools.LogOutput("> exporting data...")
-	err := tiler.exportTreeAsTileset(opts, octree, subfolder)
+	err := tilerIndex.exportTreeAsTileset(opts, octree, subfolder)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,7 +158,7 @@ func readLas(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree
 
 // Exports the data cloud represented by the given built octree into 3D tiles data structure according to the options
 // specified in the TilerOptions instance
-func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree *grid_tree.GridTree, subfolder string) error {
+func (tilerIndex *TilerIndex) exportTreeAsTileset(opts *tiler.TilerOptions, octree *grid_tree.GridTree, subfolder string) error {
 	// if octree is not built, exit
 	if !octree.IsBuilt() {
 		return errors.New("octree not built, data structure not initialized")
@@ -175,7 +184,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree *grid_t
 	// add consumers to waitgroup and launch them
 	for i := 0; i < numConsumers; i++ {
 		waitGroup.Add(1)
-		consumer := io.NewStandardConsumer(tiler.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco)
+		consumer := io.NewStandardConsumer(tilerIndex.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco)
 		go consumer.Consume(workChannel, errorChannel, &waitGroup)
 	}
 
@@ -198,7 +207,7 @@ func (tiler *Tiler) exportTreeAsTileset(opts *tiler.TilerOptions, octree *grid_t
 	return nil
 }
 
-func (tiler *Tiler) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string, lasFile *lidario.LasFile) error {
+func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string, lasFile *lidario.LasFile) error {
 	parentFolder := path.Join(opts.TilerIndexOptions.Output, subfolder)
 
 	var err error
@@ -280,15 +289,15 @@ func (tiler *Tiler) exportRootNodeLas(octree *grid_tree.GridTree, opts *tiler.Ti
 
 	log.Println("Write las file success.", newFileName)
 
-	// Check
-	log.Printf("check las_file %s", newFileName)
-	mergedLf, err := lidario.NewLasFile(newFileName, "r")
-	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
-		return err
-	}
-	defer mergedLf.Close()
+	// // Check
+	// log.Printf("check las_file %s", newFileName)
+	// mergedLf, err := lidario.NewLasFile(newFileName, "r")
+	// if err != nil {
+	// 	log.Println(err)
+	// 	log.Fatal(err)
+	// 	return err
+	// }
+	// defer mergedLf.Close()
 
 	return nil
 }

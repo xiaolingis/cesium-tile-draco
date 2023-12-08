@@ -79,6 +79,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	eightBit := defineBoolFlagCommand(flagCommand, "8bit", "b", false, "Assumes the input LAS has colors encoded in eight bit format. Default is false (LAS has 16 bit color depth)")
 	zOffset := defineFloat64FlagCommand(flagCommand, "zoffset", "z", 0, "Vertical offset to apply to points, in meters.")
 	zGeoidCorrection := defineBoolFlagCommand(flagCommand, "geoid", "g", false, "Enables Geoid to Ellipsoid elevation correction. Use this flag if your input LAS files have Z coordinates specified relative to the Earth geoid rather than to the standard ellipsoid.")
+	maxNumPointsPerNode := defineIntFlagCommand(flagCommand, "points-max-num", "y", 160000, "Maximun allowed number of points per node for GridTree Algorithms.")
 	minNumPointsPerNode := defineIntFlagCommand(flagCommand, "points-min-num", "m", 10000, "Minimum allowed number of points per node for GridTree Algorithms.")
 	folderProcessing := defineBoolFlagCommand(flagCommand, "folder", "f", false, "Enables processing of all las files from input folder. Input must be a folder if specified")
 	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
@@ -93,7 +94,6 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
 	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of gocesiumtiler.")
 
-	maxNumPointsPerNode := 50000
 	algorithm := "grid"
 
 	flagCommand.Parse(args)
@@ -104,7 +104,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 			Srid:                      srid,
 			EightBitColors:            eightBit,
 			ZOffset:                   zOffset,
-			MaxNumPoints:              &maxNumPointsPerNode,
+			MaxNumPoints:              maxNumPointsPerNode,
 			MinNumPoints:              minNumPointsPerNode,
 			ZGeoidCorrection:          zGeoidCorrection,
 			FolderProcessing:          folderProcessing,

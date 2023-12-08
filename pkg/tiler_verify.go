@@ -18,17 +18,17 @@ type TilerVerify struct {
 	algorithmManager algorithm_manager.AlgorithmManager
 }
 
-func NewTilerVerify(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) ITiler {
+func NewTilerVerify(fileFinder tools.FileFinder, algorithmManager algorithm_manager.AlgorithmManager) tiler.ITiler {
 	return &TilerVerify{
 		fileFinder:       fileFinder,
 		algorithmManager: algorithmManager,
 	}
 }
 
-func (tiler *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
+func (tilerVerify *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
 	if opts.Command == tools.CommandVerifyLas {
 
-		if err := tiler.RunTilerVerifyLas(opts); err != nil {
+		if err := tilerVerify.RunTilerVerifyLas(opts); err != nil {
 			log.Println(err)
 			return nil
 		}
@@ -45,7 +45,7 @@ func (tiler *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
 			// "./0/7/7-57-41-1.las",
 			// "tileset/0/chunk-tileset-7-57-41-1/content.las",
 		}
-		mergedLasFilePath, err := tiler.mergeLasFileListCheck(lasFilePathList)
+		mergedLasFilePath, err := tilerVerify.mergeLasFileListCheck(lasFilePathList)
 		if err != nil {
 			log.Fatal(err)
 			return nil
@@ -57,12 +57,12 @@ func (tiler *TilerVerify) RunTiler(opts *tiler.TilerOptions) error {
 	return nil
 }
 
-func (tiler *TilerVerify) RunTilerVerifyLas(opts *tiler.TilerOptions) error {
+func (tilerVerify *TilerVerify) RunTilerVerifyLas(opts *tiler.TilerOptions) error {
 	filePath := opts.Input
 
 	// Create empty octree
-	tree := tiler.algorithmManager.GetTreeAlgorithm()
-	lasFileLoader, err := tiler.readLasData(filePath, opts, tree)
+	tree := tilerVerify.algorithmManager.GetTreeAlgorithm()
+	lasFileLoader, err := tilerVerify.readLasData(filePath, opts, tree)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,18 +73,18 @@ func (tiler *TilerVerify) RunTilerVerifyLas(opts *tiler.TilerOptions) error {
 		// lasFileLoader.Tree = nil
 	}()
 
-	tiler.VerifyLasLoader(opts)
+	tilerVerify.VerifyLasLoader(opts)
 
-	tiler.prepareDataStructure(tree)
+	tilerVerify.prepareDataStructure(tree)
 
-	tiler.VerifyLas(lasFileLoader.LasFile, opts)
+	tilerVerify.VerifyLas(lasFileLoader.LasFile, opts)
 
 	tools.LogOutput("> done processing", filepath.Base(filePath))
 
 	return nil
 }
 
-func (tiler *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
+func (tilerVerify *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
 	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
@@ -96,7 +96,7 @@ func (tiler *TilerVerify) readLasData(filePath string, opts *tiler.TilerOptions,
 	return lasFileLoader, nil
 }
 
-func (tiler *TilerVerify) prepareDataStructure(octree *grid_tree.GridTree) {
+func (tilerVerify *TilerVerify) prepareDataStructure(octree *grid_tree.GridTree) {
 	// Build tree hierarchical structure
 	tools.LogOutput("> building data structure...")
 
@@ -109,12 +109,12 @@ func (tiler *TilerVerify) prepareDataStructure(octree *grid_tree.GridTree) {
 
 }
 
-func (tiler *TilerVerify) VerifyLasLoader(opts *tiler.TilerOptions) error {
+func (tilerVerify *TilerVerify) VerifyLasLoader(opts *tiler.TilerOptions) error {
 
 	return nil
 }
 
-func (tiler *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerOptions) error {
+func (tilerVerify *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerOptions) error {
 	lasHeader := lasFile.Header
 	log.Println("las_file num_of_points:", lasHeader.NumberPoints)
 
@@ -144,7 +144,7 @@ func (tiler *TilerVerify) VerifyLas(lasFile *lidario.LasFile, opts *tiler.TilerO
 	return nil
 }
 
-func (tiler *TilerVerify) mergeLasFileListCheck(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
+func (tilerVerify *TilerVerify) mergeLasFileListCheck(lasFilePathList []string) (_mergeLasFilePath string, _err error) {
 	mergedLasFilePath := "/tmp/merged.las"
 
 	filePath := lasFilePathList[0]

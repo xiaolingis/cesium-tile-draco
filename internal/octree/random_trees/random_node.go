@@ -2,15 +2,16 @@ package random_trees
 
 import "C"
 import (
+	"math"
+	"sync"
+	"sync/atomic"
+
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters/coordinate/proj4_coordinate_converter"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
 	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
 	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
 	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"math"
-	"sync"
-	"sync/atomic"
 )
 
 // Models a node of the octree, which can either be a leaf (a node without children nodes) or not. Each Node can contain

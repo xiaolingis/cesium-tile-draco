@@ -42,7 +42,7 @@ func (p *StandardProducer) produce(basePath string, node *grid_tree.GridNode, wo
 
 	// iterate all non nil children and recursively submit all work units
 	for i, child := range node.GetChildren() {
-		if child != nil && child.IsInitialized() {
+		if child != nil && child.IsChildrenInitialized() {
 			childrenPath := node.GetChildrenPath()
 			childPath := childrenPath[i]
 			// sort "74520" to "02457" for merge_children case
