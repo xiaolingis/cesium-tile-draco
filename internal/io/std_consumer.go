@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"sort"
 	"strconv"
@@ -18,6 +17,7 @@ import (
 	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
 	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 type StandardConsumer struct {
@@ -161,7 +161,7 @@ func (c *StandardConsumer) generateIntermediateDataForPnts(node *grid_tree.GridN
 		// ConvertCoordinateSrid coords according to cesium CRS
 		outCrd, err := c.coordinateConverter.ConvertToWGS84Cartesian(srcCoord, node.GetInternalSrid())
 		if err != nil {
-			log.Println(err)
+			glog.Infoln(err)
 			return nil, err
 		}
 

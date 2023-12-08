@@ -2,13 +2,14 @@ package gh_offset_calculator
 
 import (
 	"bufio"
-	"github.com/ecopia-map/cesium_tiler/tools"
-	"log"
 	"math"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 const sqrt03 = 1.7320508075688772935274463415059
@@ -69,7 +70,7 @@ func newEarthGraviationalModel(nmax int, wgs84 bool) *egm {
 	// Loading Earth Gravitational Model data
 	err := model.load(path.Join(exPath, "assets", "egm180.nor"))
 	if err != nil {
-		log.Fatal("error loading gravitational model data", err)
+		glog.Fatal("error loading gravitational model data", err)
 	}
 
 	return &model
@@ -82,7 +83,7 @@ func locatingArray(n int) int {
 func (egm *egm) load(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
@@ -122,7 +123,7 @@ func (egm *egm) load(filename string) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	egm.initialize()
 	return nil

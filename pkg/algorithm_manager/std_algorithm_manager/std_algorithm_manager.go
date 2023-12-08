@@ -1,8 +1,6 @@
 package std_algorithm_manager
 
 import (
-	"log"
-
 	"github.com/ecopia-map/cesium_tiler/internal/converters"
 	"github.com/ecopia-map/cesium_tiler/internal/converters/coordinate/proj4_coordinate_converter"
 	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/geoid_elevation_corrector"
@@ -12,6 +10,7 @@ import (
 	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
 	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager"
+	"github.com/golang/glog"
 )
 
 type StandardAlgorithmManager struct {
@@ -79,6 +78,6 @@ func evaluateTreeAlgorithm(
 		// 	return random_trees.NewRandomTree(options, converter, elevationCorrection)
 	}
 
-	log.Fatal("Unrecognized strategy")
+	glog.Fatal("Unrecognized strategy")
 	return nil
 }

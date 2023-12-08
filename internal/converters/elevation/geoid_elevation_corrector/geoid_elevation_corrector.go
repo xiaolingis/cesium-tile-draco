@@ -3,7 +3,7 @@ package geoid_elevation_corrector
 import (
 	"github.com/ecopia-map/cesium_tiler/internal/converters"
 	"github.com/ecopia-map/cesium_tiler/internal/converters/geoid_offset"
-	"log"
+	"github.com/golang/glog"
 )
 
 type GeoidElevationCorrector struct {
@@ -26,7 +26,7 @@ func NewGeoidElevationCorrector(srid int, ellipsoidToGeoidOffsetCalculator conve
 func (c *GeoidElevationCorrector) CorrectElevation(lon, lat, z float64) float64 {
 	zfix, err := c.offsetCalculator.GetEllipsoidToGeoidOffset(lon, lat, c.srid)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	return zfix + z
 }

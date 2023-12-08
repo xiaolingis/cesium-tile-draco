@@ -3,7 +3,6 @@ package grid_tree
 import (
 	"errors"
 	"fmt"
-	"log"
 	"runtime"
 	"sync"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ecopia-map/cesium_tiler/internal/geometry"
 	"github.com/ecopia-map/cesium_tiler/internal/point_loader"
 	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 // Coordinates are stored in EPSG 3395, which is a cartesian 2D metric reference system
@@ -112,8 +112,8 @@ func (tree *GridTree) getPointFromRawData(
 ) *data.Point {
 	wgs84coords, err := tree.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 	}
 
 	z := tree.elevationCorrector.CorrectElevation(wgs84coords.X, wgs84coords.Y, wgs84coords.Z)
@@ -129,9 +129,9 @@ func (tree *GridTree) getPointFromRawData(
 	)
 
 	if err != nil {
-		log.Println(err, fmt.Sprintf("srid:[%d] coordinate:[%s]", srid, tools.FmtJSONString(coordinate)))
-		log.Println(err, fmt.Sprintf("coordinate X:[%f] Y:[%f] Z:[%f]", coordinate.X, coordinate.Y, z))
-		log.Fatal(err)
+		glog.Infoln(err, fmt.Sprintf("srid:[%d] coordinate:[%s]", srid, tools.FmtJSONString(coordinate)))
+		glog.Infoln(err, fmt.Sprintf("coordinate X:[%f] Y:[%f] Z:[%f]", coordinate.X, coordinate.Y, z))
+		glog.Fatal(err)
 	}
 
 	return data.NewPoint(
@@ -171,8 +171,8 @@ func (tree *GridTree) init() {
 	box := tree.GetBounds()
 
 	// box  {eb.minX, eb.maxX, eb.minY, eb.maxY, eb.minZ, eb.maxZ}
-	log.Println("tree.box(minX,maxX,minY,maxY,minZ,maxZ):" + tools.FmtJSONString(box))
-	log.Println("x-diff:", box[1]-box[0], ", y-diff:", box[3]-box[2], ", z-diff:", box[5]-box[4])
+	glog.Infoln("tree.box(minX,maxX,minY,maxY,minZ,maxZ):" + tools.FmtJSONString(box))
+	glog.Infoln("x-diff:", box[1]-box[0], ", y-diff:", box[3]-box[2], ", z-diff:", box[5]-box[4])
 
 	node := NewGridNode(
 		"r",
@@ -225,12 +225,12 @@ func (tree *GridTree) UpdateExtendChunkEdge(chunkEdgeX, chunkEdgeY, chunkEdgeZ f
 func (tree *GridTree) MergeSmallNode(minPointsNum int32) error {
 	if !tree.built {
 		err := errors.New("octree does not built")
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
 	if err := tree.rootNode.MergeSmallChildren(int64(minPointsNum)); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -240,12 +240,12 @@ func (tree *GridTree) MergeSmallNode(minPointsNum int32) error {
 func (tree *GridTree) SplitBigNode(maxPointsNum int32) error {
 	if !tree.built {
 		err := errors.New("octree does not built")
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
 	if err := tree.rootNode.SplitBigNode(maxPointsNum); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 

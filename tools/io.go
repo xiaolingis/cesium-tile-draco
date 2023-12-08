@@ -1,17 +1,18 @@
 package tools
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 func OpenFileOrFail(filePath string) *os.File {
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return file
@@ -27,7 +28,7 @@ func GetRootFolder() string {
 	} else {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Fatal("cannot retrieve executable directory", err)
+			glog.Fatal("cannot retrieve executable directory", err)
 		}
 		return filepath.Dir(ex)
 	}

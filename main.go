@@ -24,7 +24,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -34,6 +33,7 @@ import (
 	"github.com/ecopia-map/cesium_tiler/pkg"
 	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager/std_algorithm_manager"
 	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 	// "github.com/pkg/profile" // enable for profiling
 )
 
@@ -52,11 +52,11 @@ const logo = `
 var codeVersion string
 
 func main() {
-	log.SetPrefix(fmt.Sprintf("[alpaca-%s] ", GetCodeVersion()))
-	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
+	InitGlog()
+	defer glog.Flush()
 
 	flagsGlobal := tools.ParseFlagsGlobal()
-	log.Println(tools.FmtJSONString(flagsGlobal))
+	glog.Infoln(tools.FmtJSONString(flagsGlobal))
 
 	// Prints the command line flag description
 	if *flagsGlobal.Help {
@@ -71,7 +71,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) == 0 {
-		log.Fatal("Please specify a subcommand [index|merge].")
+		glog.Fatal("Please specify a subcommand [index|merge].")
 	}
 	cmd, args := args[0], args[1:]
 
@@ -87,7 +87,7 @@ func main() {
 	case tools.CommandVerifyLasMerge:
 		mainCommandVerifyLas(args, cmd)
 	default:
-		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
+		glog.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
 	}
 
 }
@@ -110,17 +110,7 @@ func mainCommandIndex(args []string) {
 		return
 	}
 
-	// set logging and timestamp logging
-	if *flags.Silent {
-		tools.DisableLogger()
-	} else {
-		printLogo()
-	}
-	if !*flags.LogTimestamp {
-		tools.DisableLoggerTimestamp()
-	}
-
-	log.Println("flags", tools.FmtJSONString(flags))
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -149,7 +139,7 @@ func mainCommandIndex(args []string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandIndex(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -157,9 +147,9 @@ func mainCommandIndex(args []string) {
 	err := pkg.NewTiler(tools.NewStandardFileFinder(), std_algorithm_manager.NewAlgorithmManager(&opts)).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 }
 
@@ -198,7 +188,7 @@ func mainCommandMerge(args []string, cmd string) {
 		return
 	}
 
-	log.Println("flags", tools.FmtJSONString(flags))
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -225,7 +215,7 @@ func mainCommandMerge(args []string, cmd string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandMerge(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -235,9 +225,9 @@ func mainCommandMerge(args []string, cmd string) {
 	err := pkg.NewTilerMerge(fileFinder, algorithmManager).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 
 }
@@ -268,7 +258,7 @@ func mainCommandVerifyLas(args []string, cmd string) {
 		return
 	}
 
-	log.Println("flags", tools.FmtJSONString(flags))
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -297,7 +287,7 @@ func mainCommandVerifyLas(args []string, cmd string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandVerify(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -307,9 +297,9 @@ func mainCommandVerifyLas(args []string, cmd string) {
 	err := pkg.NewTilerVerify(fileFinder, algorithmManager).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 
 }
@@ -328,7 +318,7 @@ func validateOptionsForCommandVerify(opts *tiler.TilerOptions, flags *tools.Flag
 
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
-	tools.LogOutput(fmt.Sprintf("%s took %s", name, elapsed))
+	glog.Infoln(fmt.Sprintf("%s took %s", name, elapsed))
 }
 
 func printLogo() {
@@ -374,4 +364,11 @@ func GetCodeVersion() string {
 		return "Unknow"
 	}
 
+}
+
+func InitGlog() {
+	flag.Set("logtostderr", "true")
+	flag.Set("stderrthreshold", "WARNING")
+	flag.Set("v", "2")
+	flag.Parse()
 }

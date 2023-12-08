@@ -1,12 +1,12 @@
 package tools
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/golang/glog"
 )
 
 type FileFinder interface {
@@ -49,7 +49,7 @@ func (f *StandardFileFinder) getLasFilesFromInputFolder(opts *tiler.TilerOptions
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return lasFiles
@@ -68,7 +68,7 @@ func (f *StandardFileFinder) getLasFilesFromInputSubFolder(opts *tiler.TilerOpti
 	rootDir := strings.TrimSuffix(filepath.Join(opts.Input, "/"), "/")
 	lasFileDepth := 2
 
-	log.Println(opts.Input, rootDir)
+	glog.Infoln(opts.Input, rootDir)
 
 	baseInfo, _ := os.Stat(opts.Input)
 	err := filepath.Walk(
@@ -79,7 +79,7 @@ func (f *StandardFileFinder) getLasFilesFromInputSubFolder(opts *tiler.TilerOpti
 			}
 
 			pathDepth := strings.Count(strings.TrimPrefix(path, rootDir), string("/"))
-			// log.Println("walk_path:", path, ", pathDepth:", pathDepth)
+			// glog.Infoln("walk_path:", path, ", pathDepth:", pathDepth)
 
 			if info.IsDir() {
 				if pathDepth >= lasFileDepth {
@@ -95,7 +95,7 @@ func (f *StandardFileFinder) getLasFilesFromInputSubFolder(opts *tiler.TilerOpti
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return lasFiles

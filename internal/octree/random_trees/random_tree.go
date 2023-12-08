@@ -120,7 +120,7 @@ func (t *RandomTree) AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8,
 func (t *RandomTree) getPointFromRawData(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int, pointExtend *data.PointExtend) *data.Point {
 	tr, err := t.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return data.NewPoint(tr.X, tr.Y, t.elevationCorrector.CorrectElevation(tr.X, tr.Y, tr.Z), r, g, b, intensity, classification, pointExtend)

@@ -2,7 +2,8 @@ package tools
 
 import (
 	"flag"
-	"log"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -66,7 +67,7 @@ type FlagsForCommandVerify struct {
 
 func ParseFlagsGlobal() FlagsGlobal {
 	help := defineBoolFlag("help", "h", false, "Displays this help.")
-	version := defineBoolFlag("version", "v", false, "Displays the version of cesium_tiler.")
+	version := defineBoolFlag("version", "ver", false, "Displays the version of cesium_tiler.")
 
 	flag.Parse()
 
@@ -77,7 +78,7 @@ func ParseFlagsGlobal() FlagsGlobal {
 }
 
 func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-index", flag.ExitOnError)
 
@@ -132,7 +133,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 }
 
 func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-merge", flag.ExitOnError)
 
@@ -180,7 +181,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 }
 
 func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-verify", flag.ExitOnError)
 
