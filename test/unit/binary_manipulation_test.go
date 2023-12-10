@@ -3,7 +3,7 @@ package unit_test
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/tools"
 	"math"
 	"testing"
 )

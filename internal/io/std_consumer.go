@@ -15,13 +15,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/ply"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/ply"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 type StandardConsumer struct {
@@ -298,7 +299,7 @@ func (c *StandardConsumer) generateIntermediateDataForPnts(node *grid_tree.GridN
 		// ConvertCoordinateSrid coords according to cesium CRS
 		outCrd, err := c.coordinateConverter.ConvertToWGS84Cartesian(srcCoord, node.GetInternalSrid())
 		if err != nil {
-			log.Println(err)
+			glog.Infoln(err)
 			return nil, err
 		}
 

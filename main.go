@@ -1,6 +1,6 @@
 /*
- * This file is part of the Go Cesium Point Cloud Tiler distribution (https://github.com/mfbonfigli/gocesiumtiler).
- * Copyright (c) 2019 Massimo Federico Bonfigli - m.federico.bonfigli@gmail.com
+ * This file is part of the Go Cesium Point Cloud Tiler distribution (https://github.com/ecopia-map/cesium_tiler).
+ * Copyright (c) 2023 Ecopia Alpaca - ecopia-alpaca@ecopiax.com
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License Version 3 as
@@ -24,41 +24,54 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager/std_algorithm_manager"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager/std_algorithm_manager"
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 	// "github.com/pkg/profile" // enable for profiling
 )
 
-const VERSION = "1.2.3"
+const version = "v2.0.0"
 
 const logo = `
-                           _                 _   _ _
-  __ _  ___   ___ ___  ___(_)_   _ _ __ ___ | |_(_) | ___ _ __
- / _  |/ _ \ / __/ _ \/ __| | | | | '_   _ \| __| | |/ _ \ '__|
-| (_| | (_) | (_|  __/\__ \ | |_| | | | | | | |_| | |  __/ |
- \__, |\___/ \___\___||___/_|\__,_|_| |_| |_|\__|_|_|\___|_|
-  __| | A Cesium Point Cloud tile generator written in golang
- |___/  Copyright YYYY - Massimo Federico Bonfigli
+               _                    _   _ _
+  ___ ___  ___(_)_   _ _ __ ___    | |_(_) | ___ _ __
+ / __/ _ \/ __| | | | | '_   _ \   | __| | |/ _ \ '__|
+| (_|  __/\__ \ | |_| | | | | | |--| |_| | |  __/ |
+ \___\___||___/_|\__,_|_| |_| |_|-- \__|_|_|\___|_|
+  A Cesium Point Cloud tile generator written in golang
+  Copyright 2023 - Ecopia Alpaca
 `
 
+var codeVersion string
+
 func main() {
-	log.SetPrefix("[alpaca] ")
-	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
+	InitGlog()
+	defer glog.Flush()
 
 	flagsGlobal := tools.ParseFlagsGlobal()
-	log.Println(tools.FmtJSONString(flagsGlobal))
+	glog.Infoln(tools.FmtJSONString(flagsGlobal))
+
+	// Prints the command line flag description
+	if *flagsGlobal.Help {
+		showHelp()
+		return
+	}
+
+	if *flagsGlobal.Version {
+		printVersion()
+		return
+	}
 
 	args := flag.Args()
 	if len(args) == 0 {
-		log.Fatal("Please specify a subcommand [index|merge].")
+		glog.Fatal("Please specify a subcommand [index|merge].")
 	}
 	cmd, args := args[0], args[1:]
 
@@ -74,7 +87,7 @@ func main() {
 	case tools.CommandVerifyLasMerge:
 		mainCommandVerifyLas(args, cmd)
 	default:
-		log.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
+		glog.Fatalf("Unrecognized command [%q]. Command must be one of [index|merge]", cmd)
 	}
 
 }
@@ -88,7 +101,7 @@ func mainCommandIndex(args []string) {
 
 	// Prints the command line flag description
 	if *flags.Help {
-		showHelp()
+		showHelpForSubCommand(flags.FlagCommand)
 		return
 	}
 
@@ -97,15 +110,7 @@ func mainCommandIndex(args []string) {
 		return
 	}
 
-	// set logging and timestamp logging
-	if *flags.Silent {
-		tools.DisableLogger()
-	} else {
-		printLogo()
-	}
-	if !*flags.LogTimestamp {
-		tools.DisableLoggerTimestamp()
-	}
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -136,7 +141,7 @@ func mainCommandIndex(args []string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandIndex(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -144,9 +149,9 @@ func mainCommandIndex(args []string) {
 	err := pkg.NewTiler(tools.NewStandardFileFinder(), std_algorithm_manager.NewAlgorithmManager(&opts)).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 }
 
@@ -178,7 +183,18 @@ func validateOptionsForCommandIndex(opts *tiler.TilerOptions, flags *tools.Flags
 func mainCommandMerge(args []string, cmd string) {
 	flags := tools.ParseFlagsForCommandMerge(args)
 
-	log.Println("flags", tools.FmtJSONString(flags))
+	// Prints the command line flag description
+	if *flags.Help {
+		showHelpForSubCommand(flags.FlagCommand)
+		return
+	}
+
+	if *flags.Version {
+		printVersion()
+		return
+	}
+
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -208,7 +224,7 @@ func mainCommandMerge(args []string, cmd string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandMerge(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -218,9 +234,9 @@ func mainCommandMerge(args []string, cmd string) {
 	err := pkg.NewTilerMerge(fileFinder, algorithmManager).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 
 }
@@ -240,7 +256,18 @@ func validateOptionsForCommandMerge(opts *tiler.TilerOptions, flags *tools.Flags
 func mainCommandVerifyLas(args []string, cmd string) {
 	flags := tools.ParseFlagsForCommandVerify(args)
 
-	log.Println("flags", tools.FmtJSONString(flags))
+	// Prints the command line flag description
+	if *flags.Help {
+		showHelpForSubCommand(flags.FlagCommand)
+		return
+	}
+
+	if *flags.Version {
+		printVersion()
+		return
+	}
+
+	glog.Infoln("flags", tools.FmtJSONString(flags))
 
 	tilerFlags := flags.TilerFlags
 
@@ -269,7 +296,7 @@ func mainCommandVerifyLas(args []string, cmd string) {
 
 	// Validate TilerOptions
 	if msg, res := validateOptionsForCommandVerify(&opts, &flags); !res {
-		log.Fatal("Error parsing input parameters: " + msg)
+		glog.Fatal("Error parsing input parameters: " + msg)
 	}
 
 	// Starts the tiler
@@ -279,9 +306,9 @@ func mainCommandVerifyLas(args []string, cmd string) {
 	err := pkg.NewTilerVerify(fileFinder, algorithmManager).RunTiler(&opts)
 
 	if err != nil {
-		log.Fatal("Error while tiling: ", err)
+		glog.Fatal("Error while tiling: ", err)
 	} else {
-		tools.LogOutput("Conversion Completed")
+		glog.Infoln("Conversion Completed")
 	}
 
 }
@@ -300,7 +327,7 @@ func validateOptionsForCommandVerify(opts *tiler.TilerOptions, flags *tools.Flag
 
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
-	tools.LogOutput(fmt.Sprintf("%s took %s", name, elapsed))
+	glog.Infoln(fmt.Sprintf("%s took %s", name, elapsed))
 }
 
 func printLogo() {
@@ -310,15 +337,47 @@ func printLogo() {
 func showHelp() {
 	printLogo()
 	fmt.Println("***")
-	fmt.Println("GoCesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
+	fmt.Println("CesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
 	printVersion()
 	fmt.Println("***")
+	fmt.Println("")
+	fmt.Println("Usage: ./cesium_tiler < index | merge-tree | merge-children | verify-las | verify-las-merge >")
 	fmt.Println("")
 	fmt.Println("Command line flags: ")
 	flag.CommandLine.SetOutput(os.Stdout)
 	flag.PrintDefaults()
 }
 
+func showHelpForSubCommand(flagCommand *flag.FlagSet) {
+	printLogo()
+	fmt.Println("***")
+	fmt.Println("CesiumTiler is a tool that processes LAS files and transforms them in a 3D Tiles data structure consumable by Cesium.js")
+	printVersion()
+	fmt.Println("***")
+	fmt.Println("")
+	fmt.Println("Command line flags: ")
+	flagCommand.SetOutput(os.Stdout)
+	flagCommand.PrintDefaults()
+}
+
 func printVersion() {
-	fmt.Println("v." + VERSION)
+	fmt.Printf("%s-%s\n", version, codeVersion)
+}
+
+func GetCodeVersion() string {
+	if len(codeVersion) >= 8 {
+		return codeVersion[:8]
+	} else if len(codeVersion) > 0 {
+		return codeVersion
+	} else {
+		return "Unknow"
+	}
+
+}
+
+func InitGlog() {
+	flag.Set("logtostderr", "true")
+	flag.Set("stderrthreshold", "WARNING")
+	flag.Set("v", "2")
+	flag.Parse()
 }

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"os"
 	"runtime"
@@ -15,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/shopspring/decimal"
 )
 
@@ -54,7 +54,7 @@ func NewLasFile(fileName, fileMode string) (*LasFile, error) {
 		}
 	} else {
 		las.fileMode = "w"
-		log.Println("Okay, write the new file: ", fileName)
+		glog.Infoln("Okay, write the new file: ", fileName)
 		var err error
 		if las.f, err = os.Create(las.fileName); err != nil {
 			return &las, err
@@ -104,7 +104,7 @@ func InitializeUsingFile(fileName string, other *LasFile) (*LasFile, error) {
 		las.usePointUserdata = false
 	}
 
-	log.Printf("init las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+	glog.Infof("init las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
 		"userIntensity:[%v] userUserData:[%v]",
 		las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
 		las.Header.PointFormatID, las.Header.PointRecordLength,
@@ -420,12 +420,12 @@ func (las *LasFile) Close() error {
 	}
 	if las.fileMode == "w" {
 		if err := las.write(); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 	}
 
 	if err := las.f.Close(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	las.f = nil
@@ -514,7 +514,7 @@ func (las *LasFile) read() error {
 			las.usePointUserdata = false
 		}
 
-		log.Printf("read las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+		glog.Infof("read las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
 			"userIntensity:[%v] userUserData:[%v]",
 			las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
 			las.Header.PointFormatID, las.Header.PointRecordLength,
@@ -654,15 +654,15 @@ func (las *LasFile) readHeader() error {
 
 func (las *LasFile) PrintHeaderXYZ() {
 	header := las.Header
-	// log.Println(header.String())
-	log.Printf("Las Header NumberPoints:[%d] PointFormatID:[%d] "+
+	// glog.Infoln(header.String())
+	glog.Infof("Las Header NumberPoints:[%d] PointFormatID:[%d] "+
 		"MinX:[%f] MinY:[%f] MinZ:[%f] MaxX:[%f] MaxY:[%f] MaxZ:[%f] "+
 		"FileName:[%s]",
 		header.NumberPoints, header.PointFormatID,
 		header.MinX, header.MinY, header.MinZ, header.MaxX, header.MaxY, header.MaxZ,
 		las.fileName,
 	)
-	log.Printf("Las Header XOffset:[%f] YOffset:[%f] ZOffset:[%f] XScale:[%f] YScale:[%f] ZScale:[%f] FileName:[%s]",
+	glog.Infof("Las Header XOffset:[%f] YOffset:[%f] ZOffset:[%f] XScale:[%f] YScale:[%f] ZScale:[%f] FileName:[%s]",
 		header.XOffset, header.YOffset, header.ZOffset, header.XScaleFactor, header.YScaleFactor, header.ZScaleFactor,
 		las.fileName,
 	)
@@ -717,7 +717,7 @@ func (las *LasFile) readVLRs() error {
 			las.geokeys.addASCIIParams(vlr.BinaryData)
 		}
 		las.VlrData[i] = vlr
-		// log.Println(vlr.String())
+		// glog.Infoln(vlr.String())
 	}
 
 	return nil
@@ -760,7 +760,7 @@ func (las *LasFile) readPoints() error {
 	}
 
 	numCPUs := runtime.NumCPU()
-	log.Printf("parallel read numCPUs:[%d] lasFilePath:[%s]", numCPUs, las.fileName)
+	glog.Infof("parallel read numCPUs:[%d] lasFilePath:[%s]", numCPUs, las.fileName)
 
 	var wg sync.WaitGroup
 	blockSize := las.Header.NumberPoints / numCPUs
@@ -779,7 +779,7 @@ func (las *LasFile) readPoints() error {
 		wg.Add(1)
 		go func(pointSt, pointEnd int, threadNum int) {
 			defer wg.Done()
-			log.Printf("cpu-thread read %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+			glog.Infof("cpu-thread read %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 				threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 			var xVal, yVal, zVal int32
@@ -803,7 +803,7 @@ func (las *LasFile) readPoints() error {
 				p.Z = float64(zVal)*las.Header.ZScaleFactor + las.Header.ZOffset
 				offset += 4
 
-				// log.Printf(" << read point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
+				// glog.Infof(" << read point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
 
 				if las.usePointIntensity {
 					p.Intensity = binary.LittleEndian.Uint16(b[offset : offset+2])
@@ -837,16 +837,16 @@ func (las *LasFile) readPoints() error {
 					rgb.Blue = binary.LittleEndian.Uint16(b[offset : offset+2])
 					offset += 2
 					las.rgbData[i] = rgb
-					// log.Println(tools.FmtJSONString(rgb))
+					// glog.Infoln(tools.FmtJSONString(rgb))
 				}
-				// log.Println(tools.FmtJSONString(p))
+				// glog.Infoln(tools.FmtJSONString(p))
 				if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-					log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
-					log.Fatal("invalid point X/Y/Z")
+					glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					glog.Fatal("invalid point X/Y/Z")
 					continue
 				}
-				// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
-				// log.Println("verify deserialize success.")
+				// glog.Infof(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+				// glog.Infoln("verify deserialize success.")
 			}
 		}(startingPoint, endingPoint, cpuThread)
 		startingPoint = endingPoint + 1
@@ -872,7 +872,7 @@ func (las *LasFile) write() error {
 		return errors.New("cannot write LAS file until points have been added; Please see AddLasPoint()")
 	}
 
-	log.Printf("write las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
+	glog.Infof("write las FileName:[%s] Major:[%d] Minor:[%d] PointFormatID:[%d] PointRecordLength:[%d] "+
 		"userIntensity:[%v] userUserData:[%v]",
 		las.fileName, las.Header.VersionMajor, las.Header.VersionMinor,
 		las.Header.PointFormatID, las.Header.PointRecordLength,
@@ -1080,7 +1080,7 @@ func (las *LasFile) write() error {
 		binary.LittleEndian.PutUint16(bytes2, uint16(vlr.RecordLengthAfterHeader))
 		w.Write(bytes2)
 
-		// log.Printf("vlr.Desc.len[%d] [%s]", len(vlr.Description), vlr.Description)
+		// glog.Infof("vlr.Desc.len[%d] [%s]", len(vlr.Description), vlr.Description)
 		w.WriteString(fixedLengthString(vlr.Description, 32))
 
 		w.Write(vlr.BinaryData)
@@ -1090,7 +1090,7 @@ func (las *LasFile) write() error {
 	// Write the points to the file //
 	//////////////////////////////////
 	numCPUs := runtime.NumCPU()
-	log.Printf("parallel write numCPUs:[%d] lasFilePath:[%s]", numCPUs, las.fileName)
+	glog.Infof("parallel write numCPUs:[%d] lasFilePath:[%s]", numCPUs, las.fileName)
 
 	var wg sync.WaitGroup
 	blockSize := las.Header.NumberPoints / numCPUs
@@ -1114,7 +1114,7 @@ func (las *LasFile) write() error {
 			wg.Add(1)
 			go func(pointSt, pointEnd int, threadNum int) {
 				defer wg.Done()
-				log.Printf("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+				glog.Infof("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 					threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 				var val int32
@@ -1224,7 +1224,7 @@ func (las *LasFile) write() error {
 			wg.Add(1)
 			go func(pointSt, pointEnd int, threadNum int) {
 				defer wg.Done()
-				log.Printf("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+				glog.Infof("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 					threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 				var val int32
@@ -1352,7 +1352,7 @@ func (las *LasFile) write() error {
 			wg.Add(1)
 			go func(pointSt, pointEnd int, threadNum int) {
 				defer wg.Done()
-				log.Printf("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+				glog.Infof("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 					threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 				// var val int32
@@ -1367,11 +1367,11 @@ func (las *LasFile) write() error {
 					p = las.pointData[i]
 
 					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-						log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
-						log.Fatal("invalid point X/Y/Z")
+						glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						glog.Fatal("invalid point X/Y/Z")
 						continue
 					}
-					// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					// glog.Infof(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 
 					offset = i * las.Header.PointRecordLength
 
@@ -1405,7 +1405,7 @@ func (las *LasFile) write() error {
 					b[offset+3] = b4[3]
 					offset += 4
 
-					// log.Printf(" >> write point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
+					// glog.Infof(" >> write point_pos:[%d] XRelative:[%d] YRelative:[%d] ZRelative:[%d]", i, xVal, yVal, zVal)
 
 					if las.usePointIntensity {
 						binary.LittleEndian.PutUint16(b2, p.Intensity)
@@ -1452,12 +1452,12 @@ func (las *LasFile) write() error {
 						pOffset += 4
 
 						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
-							log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-							log.Fatal("invalid point X/Y/Z")
+							glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							glog.Fatal("invalid point X/Y/Z")
 							continue
 						}
-						// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-						// log.Println("verify serialize success.")
+						// glog.Infof(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+						// glog.Infoln("verify serialize success.")
 					}
 
 					// p = las.pointData[i]
@@ -1519,7 +1519,7 @@ func (las *LasFile) write() error {
 			wg.Add(1)
 			go func(pointSt, pointEnd int, threadNum int) {
 				defer wg.Done()
-				log.Printf("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+				glog.Infof("cpu-thread write %d/%d pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 					threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 				var val int32
@@ -1535,11 +1535,11 @@ func (las *LasFile) write() error {
 					offset = i * las.Header.PointRecordLength
 
 					if !las.CheckPointXYZInvalid(p.X, p.Y, p.Z) {
-						log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
-						log.Fatal("invalid point X/Y/Z")
+						glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+						glog.Fatal("invalid point X/Y/Z")
 						continue
 					}
-					// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
+					// glog.Infof(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, p.X, p.Y, p.Z)
 
 					// val = int32((p.X - las.Header.XOffset) / las.Header.XScaleFactor)
 					xRelative := decimal.NewFromFloat(p.X).Sub(decimal.NewFromFloat(las.Header.XOffset))
@@ -1628,12 +1628,12 @@ func (las *LasFile) write() error {
 						pOffset += 4
 
 						if !las.CheckPointXYZInvalid(pX, pY, pZ) {
-							log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-							log.Fatal("invalid point X/Y/Z")
+							glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+							glog.Fatal("invalid point X/Y/Z")
 							continue
 						}
-						// log.Printf(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
-						// log.Println("verify serialize success.")
+						// glog.Infof(" okokok valid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, pX, pY, pZ)
+						// glog.Infoln("verify serialize success.")
 					}
 
 					// buf := new(bytes.Buffer)
@@ -1693,13 +1693,13 @@ func (las *LasFile) write() error {
 	wg.Wait()
 
 	if nSize, err := w.Write(b); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	} else {
-		log.Println("write nSize:", nSize)
+		glog.Infoln("write nSize:", nSize)
 	}
 
 	if err := w.Flush(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return nil

@@ -1,6 +1,6 @@
 package offset_elevation_corrector
 
-import "github.com/mfbonfigli/gocesiumtiler/internal/converters"
+import "github.com/ecopia-map/cesium_tiler/internal/converters"
 
 type OffsetElevationCorrector struct {
 	Offset float64

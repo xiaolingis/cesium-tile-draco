@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"path"
@@ -15,14 +14,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager/std_algorithm_manager"
-	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/io"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager/std_algorithm_manager"
+	lidario "github.com/ecopia-map/cesium_tiler/third_party/lasread"
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 type TilerMerge struct {
@@ -40,12 +40,12 @@ func NewTilerMerge(fileFinder tools.FileFinder, algorithmManager algorithm_manag
 func (tilerMerge *TilerMerge) RunTiler(opts *tiler.TilerOptions) error {
 	if opts.Command == tools.CommandMergeChildren {
 		if err := tilerMerge.RunTilerMergeChildren(opts); err != nil {
-			log.Println(err)
+			glog.Infoln(err)
 			return nil
 		}
 	} else if opts.Command == tools.CommandMergeTree {
 		if err := tilerMerge.RunTilerMergeTree(opts); err != nil {
-			log.Println(err)
+			glog.Infoln(err)
 			return nil
 		}
 	}
@@ -54,26 +54,26 @@ func (tilerMerge *TilerMerge) RunTiler(opts *tiler.TilerOptions) error {
 }
 
 func (tilerMerge *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) error {
-	log.Println("Preparing list of files to process...")
+	glog.Infoln("Preparing list of files to process...")
 
 	// Prepare list of files to process
 	lasFilePathList := tilerMerge.fileFinder.GetLasFilesToMerge(opts)
-	log.Println("las_file list", lasFilePathList)
+	glog.Infoln("las_file list", lasFilePathList)
 
 	if len(lasFilePathList) == 0 {
 		err := fmt.Errorf("no children las-file found. input:[%s]", opts.Input)
-		log.Fatal(err.Error() + ". " + tools.FmtJSONString(opts))
+		glog.Fatal(err.Error() + ". " + tools.FmtJSONString(opts))
 		return err
 	}
 
 	for i, filePath := range lasFilePathList {
-		log.Printf("las_file path %d [%s]", i+1, filePath)
+		glog.Infof("las_file path %d [%s]", i+1, filePath)
 	}
 
 	tree := tilerMerge.algorithmManager.GetTreeAlgorithm()
 	lasFile, err := tilerMerge.mergeLasFileListToSingleTree(lasFilePathList, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 	defer func() {
@@ -84,7 +84,7 @@ func (tilerMerge *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) er
 	tilerMerge.exportTreeRootTileset(tree, opts)
 
 	if err := tilerMerge.repairTilesetMetadata(opts, lasFilePathList); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -92,13 +92,13 @@ func (tilerMerge *TilerMerge) RunTilerMergeChildren(opts *tiler.TilerOptions) er
 
 	tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
 
-	tools.LogOutput("> done merging-children", opts.Input)
+	glog.Infoln("> done merging-children", opts.Input)
 
 	return nil
 }
 
 func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error {
-	log.Println("Preparing list of files to process...")
+	glog.Infoln("Preparing list of files to process...")
 
 	rootDir := strings.TrimSuffix(filepath.Join(opts.Input, ""), "/")
 
@@ -109,7 +109,7 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 		rootDir,
 		func(path string, info os.FileInfo, err error) error {
 			pathDepth := strings.Count(strings.TrimPrefix(path, rootDir), string("/"))
-			// log.Println("walk_path:", path, ", pathDepth:", pathDepth)
+			// glog.Infoln("walk_path:", path, ", pathDepth:", pathDepth)
 
 			// if os.SameFile(info, baseInfo) {
 			// 	levelDirsMap[0] = append(levelDirsMap[0], rootDir)
@@ -139,17 +139,17 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
-	log.Println("merge level-tree. level-num:", len(levelDirsMap))
+	glog.Infoln("merge level-tree. level-num:", len(levelDirsMap))
 
 	for level, dirList := range levelDirsMap {
-		log.Println("level-folder", level, tools.FmtJSONString(dirList))
-		log.Println("level-folder", level, len(dirList))
+		glog.Infoln("level-folder", level, tools.FmtJSONString(dirList))
+		glog.Infoln("level-folder", level, len(dirList))
 	}
 
-	log.Println("opts", tools.FmtJSONString(opts))
+	glog.Infoln("opts", tools.FmtJSONString(opts))
 
 	maxLevel := len(levelDirsMap) - 1
 
@@ -166,7 +166,7 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 			dirOpts.CellMaxSize = cellSize * 2
 			dirOpts.CellMinSize = cellSize
 
-			log.Println("dirOpts", tools.FmtJSONString(dirOpts))
+			glog.Infoln("dirOpts", tools.FmtJSONString(dirOpts))
 			tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm().Cleanup()
 			tilerMerge.algorithmManager = std_algorithm_manager.NewAlgorithmManager(dirOpts)
 
@@ -175,12 +175,12 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 			if i == 1 {
 				scale := 2
 				if err := tilerMerge.AdjustRootGeometricError(dirOpts, scale); err != nil {
-					log.Fatal(err)
+					glog.Fatal(err)
 				}
 			} else if i == 0 {
 				scale := 4
 				if err := tilerMerge.AdjustRootGeometricError(dirOpts, scale); err != nil {
-					log.Fatal(err)
+					glog.Fatal(err)
 				}
 			}
 		}
@@ -188,7 +188,7 @@ func (tilerMerge *TilerMerge) RunTilerMergeTree(opts *tiler.TilerOptions) error 
 
 	}
 
-	tools.LogOutput("> done merging-tree", opts.Input)
+	glog.Infoln("> done merging-tree", opts.Input)
 
 	return nil
 }
@@ -200,28 +200,28 @@ func (tilerMerge *TilerMerge) mergeLasFileListToSingleTree(
 	// merge multi sub-folder las to single-las
 	mergedLasFilePath, err := tilerMerge.mergeLasFileList(lasFilePathList)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return nil, err
 	}
-	log.Println("mergedLasFilePath", mergedLasFilePath)
+	glog.Infoln("mergedLasFilePath", mergedLasFilePath)
 
 	// load merged single-las
-	tools.LogOutput("Processing file " + mergedLasFilePath)
+	glog.Infoln("Processing file " + mergedLasFilePath)
 	lasFileLoader, err := tilerMerge.readLasData(mergedLasFilePath, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return nil, err
 	}
 
 	tilerMerge.prepareDataStructure(tree)
-	log.Println(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
+	glog.Infoln(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
 
 	// load sub-folder las points in octree buffer
 	lasTreeList := make([]*grid_tree.GridTree, 0)
 	for i, filePath := range lasFilePathList {
 		// Define point_loader strategy
 		lasTree := tilerMerge.algorithmManager.GetTreeAlgorithm()
-		tools.LogOutput("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFilePathList)) + ", " + filePath)
+		glog.Infoln("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFilePathList)) + ", " + filePath)
 		tilerMerge.loadLasFileIntoTree(filePath, opts, lasTree)
 
 		lasTreeList = append(lasTreeList, lasTree)
@@ -247,7 +247,7 @@ func (tilerMerge *TilerMerge) mergeLasFileListToSingleTree(
 	*/
 
 	if err := tilerMerge.RepairParentTree(tree, lasTreeList); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return nil, err
 	}
 
@@ -258,7 +258,7 @@ func (tilerMerge *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.T
 	// Create octree from las
 	lasFileLoader, err := tilerMerge.readLasData(filePath, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	defer func() {
 		_ = lasFileLoader.LasFile.Clear()
@@ -266,17 +266,17 @@ func (tilerMerge *TilerMerge) loadLasFileIntoTree(filePath string, opts *tiler.T
 	}()
 
 	tilerMerge.prepareDataStructure(tree)
-	log.Println(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
+	glog.Infoln(tree.GetRootNode().NumberOfPoints(), tree.GetRootNode().TotalNumberOfPoints())
 
-	tools.LogOutput("> done processing", filepath.Base(filePath))
+	glog.Infoln("> done processing", filepath.Base(filePath))
 }
 
 func (tilerMerge *TilerMerge) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
-	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
+	glog.Infoln("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return nil, err
 	}
 
@@ -285,15 +285,15 @@ func (tilerMerge *TilerMerge) readLasData(filePath string, opts *tiler.TilerOpti
 
 func (tilerMerge *TilerMerge) prepareDataStructure(octree *grid_tree.GridTree) error {
 	// Build tree hierarchical structure
-	tools.LogOutput("> building data structure...")
+	glog.Infoln("> building data structure...")
 
 	if err := octree.Build(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
 	rootNode := octree.GetRootNode()
-	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
+	glog.Infoln("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
 
 	return nil
 }
@@ -303,8 +303,8 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 	filePath := lasFilePathList[0]
 	lf0, err := lidario.NewLasFile(filePath, "r")
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 		return "", err
 	}
 	defer func() {
@@ -316,15 +316,15 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 
 	if _, err := os.Stat(mergedLasFilePath); err == nil {
 		if err := os.Remove(mergedLasFilePath); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	newLf, err := lidario.InitializeUsingFile(mergedLasFilePath, lf0)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 		return "", err
 	}
 	defer func() {
@@ -335,8 +335,8 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 	}()
 
 	if err := newLf.CopyHeaderXYZ(lf0.Header); err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 		return "", err
 	}
 
@@ -344,18 +344,18 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 	lf0 = nil
 
 	for i, filePath := range lasFilePathList {
-		log.Printf("mergeLasFileList %d/%d %s", i+1, len(lasFilePathList), filePath)
+		glog.Infof("mergeLasFileList %d/%d %s", i+1, len(lasFilePathList), filePath)
 		lf, err := lidario.NewLasFile(filePath, "r")
 		if err != nil {
-			log.Println(err)
-			log.Fatal(err)
+			glog.Infoln(err)
+			glog.Fatal(err)
 			return "", err
 		}
 		defer lf.Close()
 
 		if err := newLf.MergeHeaderXYZ(lf.Header); err != nil {
-			log.Println(err)
-			log.Fatal(err)
+			glog.Infoln(err)
+			glog.Fatal(err)
 			return "", err
 		}
 
@@ -365,8 +365,8 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 			// }
 			p, err := lf.LasPoint(i)
 			if err != nil {
-				log.Println(err)
-				log.Fatal(err)
+				glog.Infoln(err)
+				glog.Fatal(err)
 				return "", err
 			}
 			newLf.AddLasPoint(p)
@@ -379,11 +379,11 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 	newLf = nil
 
 	// Check
-	log.Printf("mergedLasFilePath %s", mergedLasFilePath)
+	glog.Infof("mergedLasFilePath %s", mergedLasFilePath)
 	mergedLf, err := lidario.NewLasFile(mergedLasFilePath, "r")
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 		return "", err
 	}
 	defer mergedLf.Close()
@@ -393,7 +393,7 @@ func (tilerMerge *TilerMerge) mergeLasFileList(lasFilePathList []string) (_merge
 
 func (tilerMerge *TilerMerge) RepairParentTree(octree *grid_tree.GridTree, treeList []*grid_tree.GridTree) error {
 	// Build tree hierarchical structure
-	tools.LogOutput("> building parent tree structure...")
+	glog.Infoln("> building parent tree structure...")
 
 	// update parent-tree bbox
 	bboxList := make([]*geometry.BoundingBox, 0)
@@ -441,11 +441,11 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 	rootTileset := io.Tileset{}
 	rootFile, err := ioutil.ReadFile(rootMetadataPath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 	if err := json.Unmarshal([]byte(rootFile), &rootTileset); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -460,11 +460,11 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 		childTileset := io.Tileset{}
 		childFile, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 			return err
 		}
 		if err := json.Unmarshal([]byte(childFile), &childTileset); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 			return err
 		}
 		childTilesetList = append(childTilesetList, &childTileset)
@@ -512,13 +512,13 @@ func (tilerMerge *TilerMerge) repairTilesetMetadata(opts *tiler.TilerOptions, la
 	// Outputting a formatted json file
 	rootTilesetJSON, err := json.MarshalIndent(rootTileset, "", "\t")
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
 	// Writes the tileset.json binary content to the given file
 	if err = ioutil.WriteFile(rootMetadataPath, rootTilesetJSON, 0666); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -541,11 +541,11 @@ func (tilerMerge *TilerMerge) AdjustRootGeometricError(opts *tiler.TilerOptions,
 	rootTileset := io.Tileset{}
 	rootFile, err := ioutil.ReadFile(rootMetadataPath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 	if err := json.Unmarshal([]byte(rootFile), &rootTileset); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -555,13 +555,13 @@ func (tilerMerge *TilerMerge) AdjustRootGeometricError(opts *tiler.TilerOptions,
 	// Outputting a formatted json file
 	rootTilesetJSON, err := json.MarshalIndent(rootTileset, "", "\t")
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
 	// Writes the tileset.json binary content to the given file
 	if err = ioutil.WriteFile(rootMetadataPath, rootTilesetJSON, 0666); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -569,10 +569,10 @@ func (tilerMerge *TilerMerge) AdjustRootGeometricError(opts *tiler.TilerOptions,
 }
 
 func (tilerMerge *TilerMerge) exportTreeRootTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
-	tools.LogOutput("> exporting data...")
+	glog.Infoln("> exporting data...")
 	err := tilerMerge.exportRootNodeTileset(opts, octree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 }
 
@@ -620,7 +620,7 @@ func (tilerMerge *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tr
 	// find if there are errors in the error channel buffer
 	withErrors := false
 	for err := range errorChannel {
-		log.Println(err)
+		glog.Infoln(err)
 		withErrors = true
 	}
 	if withErrors {
@@ -639,15 +639,15 @@ func (tilerMerge *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	// lf, err = lidario.NewLasFile(filePath, "r")
 	// if err != nil {
 	// 	fmt.Println(err)
-	// 	log.Fatal(err)
+	// 	glog.Fatal(err)
 	// }
 	// defer lf.Close()
 
 	newFileName := path.Join(parentFolder, "content.las")
 	newLf, err := lidario.InitializeUsingFile(newFileName, lasFile)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 	}
 	defer func() {
 		if newLf != nil {
@@ -657,8 +657,8 @@ func (tilerMerge *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	}()
 
 	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 	}
 
 	progress := 0
@@ -668,15 +668,15 @@ func (tilerMerge *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	numberOfPoints := rootNode.NumberOfPoints()
 	points := rootNode.GetPoints()
 
-	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints())
+	glog.Infoln("las_file root_node num_of_points:", rootNode.NumberOfPoints())
 
 	for i := 0; i < int(numberOfPoints); i++ {
 		point := points[i]
 
 		pointLas, err := lasFile.LasPoint(point.PointExtend.LasPointIndex)
 		if err != nil {
-			log.Println(err)
-			log.Fatal(err)
+			glog.Infoln(err)
+			glog.Fatal(err)
 			return err
 		}
 
@@ -687,7 +687,7 @@ func (tilerMerge *TilerMerge) exportRootNodeLas(octree *grid_tree.GridTree, opts
 		if progress != oldProgress {
 			oldProgress = progress
 			if progress%50 == 0 {
-				log.Printf("export root-node progress: %v\n", progress)
+				glog.Infof("export root-node progress: %v\n", progress)
 			}
 		}
 	}

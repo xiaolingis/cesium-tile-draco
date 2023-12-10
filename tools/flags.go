@@ -2,7 +2,8 @@ package tools
 
 import (
 	"flag"
-	"log"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -37,21 +38,30 @@ type TilerFlags struct {
 }
 
 type FlagsForCommandIndex struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
+
 	Output                         *string
 	UseEdgeCalculateGeometricError *bool
 	Silent                         *bool
 	LogTimestamp                   *bool
-	Help                           *bool
-	Version                        *bool
 }
 
 type FlagsForCommandMerge struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
 }
 
 type FlagsForCommandVerify struct {
+	FlagCommand *flag.FlagSet
 	TilerFlags
+	Help    *bool
+	Version *bool
+
 	Output      *string
 	OffsetBegin *int
 	OffsetEnd   *int
@@ -59,7 +69,7 @@ type FlagsForCommandVerify struct {
 
 func ParseFlagsGlobal() FlagsGlobal {
 	help := defineBoolFlag("help", "h", false, "Displays this help.")
-	version := defineBoolFlag("version", "v", false, "Displays the version of gocesiumtiler.")
+	version := defineBoolFlag("version", "ver", false, "Displays the version of cesium_tiler.")
 
 	flag.Parse()
 
@@ -70,7 +80,7 @@ func ParseFlagsGlobal() FlagsGlobal {
 }
 
 func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-index", flag.ExitOnError)
 
@@ -94,13 +104,14 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 	silent := defineBoolFlagCommand(flagCommand, "silent", "s", false, "Use to suppress all the non-error messages.")
 	logTimestamp := defineBoolFlagCommand(flagCommand, "timestamp", "t", false, "Adds timestamp to log messages.")
 	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
-	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of gocesiumtiler.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
 
 	algorithm := "grid"
 
 	flagCommand.Parse(args)
 
 	return FlagsForCommandIndex{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -128,7 +139,7 @@ func ParseFlagsForCommandIndex(args []string) FlagsForCommandIndex {
 }
 
 func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-merge", flag.ExitOnError)
 
@@ -144,6 +155,9 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	draco := defineBoolFlagCommand(flagCommand, "draco", "", false, "Use Draco algorithm to compress xyz and color")
 	dracoEncoderPath := defineStringFlagCommand(flagCommand, "draco-encoder-path", "", "", "draco-encoder-path")
 
+	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
+
 	folderProcessing := true
 
 	minNumPointsPerNode := 10000
@@ -153,6 +167,7 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 	flagCommand.Parse(args)
 
 	return FlagsForCommandMerge{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -170,11 +185,13 @@ func ParseFlagsForCommandMerge(args []string) FlagsForCommandMerge {
 			Draco:                     draco,
 			DracoEncoderPath:          dracoEncoderPath,
 		},
+		Help:    help,
+		Version: version,
 	}
 }
 
 func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
-	log.Println(FmtJSONString(args))
+	glog.Infoln(FmtJSONString(args))
 
 	flagCommand := flag.NewFlagSet("command-verify", flag.ExitOnError)
 
@@ -187,6 +204,9 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 	recursiveFolderProcessing := defineBoolFlagCommand(flagCommand, "recursive", "r", false, "Enables recursive lookup for all .las files inside the subfolders")
 	gridCellMaxSize := defineFloat64FlagCommand(flagCommand, "grid-max-size", "x", 10.0, "Max cell size in meters for the grid algorithm. It roughly represents the max spacing between any two samples. ")
 	gridCellMinSize := defineFloat64FlagCommand(flagCommand, "grid-min-size", "n", 5.0, "Min cell size in meters for the grid algorithm. It roughly represents the minimum possible size of a 3d tile. ")
+
+	help := defineBoolFlagCommand(flagCommand, "help", "h", false, "Displays this help.")
+	version := defineBoolFlagCommand(flagCommand, "version", "v", false, "Displays the version of cesium_tiler.")
 
 	offsetBegin := 0
 	offsetEnd := -1
@@ -201,6 +221,7 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 	flagCommand.Parse(args)
 
 	return FlagsForCommandVerify{
+		FlagCommand: flagCommand,
 		TilerFlags: TilerFlags{
 			Input:                     input,
 			Srid:                      srid,
@@ -216,6 +237,8 @@ func ParseFlagsForCommandVerify(args []string) FlagsForCommandVerify {
 			GridCellMinSize:           gridCellMinSize,
 			RefineMode:                &refineMode,
 		},
+		Help:        help,
+		Version:     version,
 		Output:      output,
 		OffsetBegin: &offsetBegin,
 		OffsetEnd:   &offsetEnd,

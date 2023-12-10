@@ -1,11 +1,11 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/io"
+	"github.com/ecopia-map/cesium_tiler/internal/octree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 	"path"
 	"sync"
 	"testing"

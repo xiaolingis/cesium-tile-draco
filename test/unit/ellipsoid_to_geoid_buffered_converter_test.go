@@ -1,9 +1,9 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/coordinate/proj4_coordinate_converter"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/geoid_offset"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/geoid_offset/gh_offset_calculator"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/coordinate/proj4_coordinate_converter"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/geoid_offset"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/geoid_offset/gh_offset_calculator"
 	"math"
 	"testing"
 )

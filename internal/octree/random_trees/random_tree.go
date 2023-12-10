@@ -6,12 +6,12 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/point_loader"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree"
+	"github.com/ecopia-map/cesium_tiler/internal/point_loader"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
 )
 
 // Represents an RandomTree of points and contains all information needed
@@ -120,7 +120,7 @@ func (t *RandomTree) AddPoint(coordinate *geometry.Coordinate, r uint8, g uint8,
 func (t *RandomTree) getPointFromRawData(coordinate *geometry.Coordinate, r uint8, g uint8, b uint8, intensity uint8, classification uint8, srid int, pointExtend *data.PointExtend) *data.Point {
 	tr, err := t.coordinateConverter.ConvertCoordinateSrid(srid, 4326, *coordinate)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return data.NewPoint(tr.X, tr.Y, t.elevationCorrector.CorrectElevation(tr.X, tr.Y, tr.Z), r, g, b, intensity, classification, pointExtend)

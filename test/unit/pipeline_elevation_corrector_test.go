@@ -1,8 +1,8 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/pipeline_elevation_corrector"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/pipeline_elevation_corrector"
 	"testing"
 )
 

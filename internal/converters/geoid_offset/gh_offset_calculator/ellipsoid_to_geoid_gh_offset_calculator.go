@@ -1,8 +1,8 @@
 package gh_offset_calculator
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
 	"math"
 )
 

@@ -3,15 +3,15 @@ package grid_tree
 import "C"
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"sync"
 	"sync/atomic"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/golang/glog"
 )
 
 // Models a node of the octree, which can either be a leaf (a node without children nodes) or not.
@@ -60,7 +60,7 @@ func NewGridNode(
 	minCellSize float64,
 	root bool,
 ) *GridNode {
-	// log.Println("new-node nodeNID:", nodeNID)
+	// glog.Infoln("new-node nodeNID:", nodeNID)
 	node := GridNode{
 		nodeNID:               nodeNID,
 		parent:                parent,                        // the parent node
@@ -86,7 +86,7 @@ func NewGridNode(
 // Adds a Point to the GridNode and propagates the point eventually pushed out to the appropriate children
 func (n *GridNode) AddDataPoint(point *data.Point, isFollowSizeThreshold bool) {
 	// if !isFollowSizeThreshold || n.cellSize < n.minCellSize/2 {
-	// 	log.Println(*point)
+	// 	glog.Infoln(*point)
 	// }
 	if point == nil {
 		return
@@ -271,12 +271,12 @@ func (n *GridNode) getPointGridCell(point *data.Point) *gridCell {
 	n.RUnlock()
 
 	// if n.cellSize < n.minCellSize/2 {
-	// 	log.Println(*point)
+	// 	glog.Infoln(*point)
 	// }
 
 	if cell == nil {
 		// if n.root {
-		// 	log.Println("grid-cell-index. cellSize:", n.cellSize, ", x:", index.x, ",y:", index.y, ",z:", index.z)
+		// 	glog.Infoln("grid-cell-index. cellSize:", n.cellSize, ", x:", index.x, ",y:", index.y, ",z:", index.z)
 		// }
 		return n.initializeGridCell(index)
 	}
@@ -297,12 +297,12 @@ func (n *GridNode) initializeGridCell(index *gridIndex) *gridCell {
 	n.Lock()
 
 	// if n.cellSize < n.minCellSize/2 {
-	// 	log.Println(*index, n.cells)
+	// 	glog.Infoln(*index, n.cells)
 	// }
 
 	if n.cells == nil {
 		if n.cellSize < n.minCellSize/2 {
-			log.Println("nil cells. nodeNID:", n.nodeNID, *index)
+			glog.Infoln("nil cells. nodeNID:", n.nodeNID, *index)
 		}
 		n.cells = make(map[gridIndex]*gridCell)
 	}
@@ -331,7 +331,7 @@ func (n *GridNode) isEmpty() bool {
 // pushes a point to its gridcell and returns the point eventually pushed out
 func (n *GridNode) pushPointToCell(point *data.Point, isFollowSizeThreshold bool) *data.Point {
 	// if !isFollowSizeThreshold || n.cellSize < n.minCellSize/2 {
-	// 	log.Println(*point)
+	// 	glog.Infoln(*point)
 	// }
 	return n.getPointGridCell(point).pushPoint(point, isFollowSizeThreshold)
 }
@@ -411,13 +411,13 @@ func (n *GridNode) MergeBoundingBox(bbox *geometry.BoundingBox) error {
 }
 
 func (n *GridNode) TruncateChildren() {
-	log.Println("clear merged-tree.children. children-length:", len(n.children))
+	glog.Infoln("clear merged-tree.children. children-length:", len(n.children))
 	for i := 0; i < 8; i++ {
 		n.children[i] = nil
 	}
 
 	if n.TotalNumberOfPoints() != int64(n.NumberOfPoints()) {
-		log.Printf("clear merged-tree.children. NumberOfPoints[%d] TotalNumberOfPoints:[%d]",
+		glog.Infof("clear merged-tree.children. NumberOfPoints[%d] TotalNumberOfPoints:[%d]",
 			n.NumberOfPoints(), n.TotalNumberOfPoints())
 		n.totalNumberOfPoints = int64(n.numberOfPoints)
 	}
@@ -437,7 +437,7 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 			continue
 		}
 		if err := n.children[i].MergeSmallChildren(minPointsNum); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 
 	}
@@ -488,7 +488,7 @@ func (n *GridNode) MergeSmallChildren(minPointsNum int64) error {
 		// // log
 		// node0 := wrapChildren[0].node
 		// node1 := wrapChildren[1].node
-		// log.Printf("merge leaf-node. "+
+		// glog.Infof("merge leaf-node. "+
 		// 	"nodeNID:[%s] numPoints:[%d] totalPoints:[%d] to "+
 		// 	"nodeNID:[%s] numPoints:[%d] totalPoints:[%d] "+
 		// 	"totalMerge:[%d] nodeIndexList:[%s]",
@@ -572,12 +572,12 @@ func (n *GridNode) SplitBigNode(maxPointsNum int32) error {
 
 		if child.IsLeaf() {
 			if err := n.children[i].SplitBigLeafNode(maxPointsNum); err != nil {
-				log.Fatal(err)
+				glog.Fatal(err)
 				return err
 			}
 		} else {
 			if err := n.children[i].SplitBigBranchNode(maxPointsNum); err != nil {
-				log.Fatal(err)
+				glog.Fatal(err)
 				return err
 			}
 		}
@@ -607,7 +607,7 @@ func (n *GridNode) SplitBigBranchNode(maxPointsNum int32) error {
 			continue
 		}
 		if err := n.children[i].SplitBigNode(maxPointsNum); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 			return err
 		}
 
@@ -623,12 +623,12 @@ func (n *GridNode) SplitBigLeafNode(maxPointsNum int32) error {
 	}
 
 	if n.NumberOfPoints() <= maxPointsNum {
-		// log.Printf("split leaf-node leaf. nodeNID:[%s] numberOfPoints:[%d] totalNumberOfPoints:[%d]  points.len:[%d]",
+		// glog.Infof("split leaf-node leaf. nodeNID:[%s] numberOfPoints:[%d] totalNumberOfPoints:[%d]  points.len:[%d]",
 		// 	n.nodeNID, n.NumberOfPoints(), n.TotalNumberOfPoints(), len(n.points))
 		return nil
 	}
 
-	// log.Printf("split leaf-node begin. nodeNID:[%s] numberOfPoints:[%d] points.len:[%d]",
+	// glog.Infof("split leaf-node begin. nodeNID:[%s] numberOfPoints:[%d] points.len:[%d]",
 	// 	n.nodeNID, n.NumberOfPoints(), len(n.points))
 
 	// ##########################################################################
@@ -654,7 +654,7 @@ func (n *GridNode) SplitBigLeafNode(maxPointsNum int32) error {
 	}
 	n.BuildPoints()
 
-	// log.Printf("split leaf-node end. nodeNID:[%s] numberOfPoints:[%d] totalNumberOfPoints:[%d]  points.len:[%d]",
+	// glog.Infof("split leaf-node end. nodeNID:[%s] numberOfPoints:[%d] totalNumberOfPoints:[%d]  points.len:[%d]",
 	// 	n.nodeNID, n.NumberOfPoints(), n.TotalNumberOfPoints(), len(n.points))
 
 	// split children
@@ -663,7 +663,7 @@ func (n *GridNode) SplitBigLeafNode(maxPointsNum int32) error {
 			continue
 		}
 		if err := n.children[i].SplitBigLeafNode(maxPointsNum); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 			return err
 		}
 	}

@@ -1,7 +1,7 @@
 package converters
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
 )
 
 type CoordinateConverter interface {

@@ -1,7 +1,7 @@
 package io
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree"
+	"github.com/ecopia-map/cesium_tiler/internal/octree"
 	"sync"
 )
 

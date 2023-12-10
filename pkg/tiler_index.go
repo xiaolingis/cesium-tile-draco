@@ -3,7 +3,6 @@ package pkg
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -11,12 +10,13 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/io"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
-	lidario "github.com/mfbonfigli/gocesiumtiler/third_party/lasread"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/io"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager"
+	lidario "github.com/ecopia-map/cesium_tiler/third_party/lasread"
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 )
 
 type TilerIndex struct {
@@ -33,20 +33,20 @@ func NewTiler(fileFinder tools.FileFinder, algorithmManager algorithm_manager.Al
 
 // Starts the tiling process
 func (tilerIndex *TilerIndex) RunTiler(opts *tiler.TilerOptions) error {
-	log.Println("Preparing list of files to process...")
+	glog.Infoln("Preparing list of files to process...")
 
 	// Prepare list of files to process
 	lasFiles := tilerIndex.fileFinder.GetLasFilesToProcess(opts)
-	log.Println("las_file list", lasFiles)
+	glog.Infoln("las_file list", lasFiles)
 	for i, filePath := range lasFiles {
-		log.Printf("las_file path %d [%s]", i+1, filePath)
+		glog.Infof("las_file path %d [%s]", i+1, filePath)
 	}
 
 	// load las points in octree buffer
 	for i, filePath := range lasFiles {
 		// Define point_loader strategy
 		var tree = tilerIndex.algorithmManager.GetTreeAlgorithm()
-		tools.LogOutput("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFiles)))
+		glog.Infoln("Processing file " + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(lasFiles)))
 		tilerIndex.processLasFile(filePath, opts, tree)
 
 		// tree.Clear()
@@ -60,7 +60,7 @@ func (tilerIndex *TilerIndex) processLasFile(filePath string, opts *tiler.TilerO
 	// Create empty octree
 	lasFileLoader, err := tilerIndex.readLasData(filePath, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	defer func() {
 		_ = lasFileLoader.LasFile.Clear()
@@ -76,15 +76,15 @@ func (tilerIndex *TilerIndex) processLasFile(filePath string, opts *tiler.TilerO
 
 	tilerIndex.exportRootNodeLas(tree, opts, subfolder, lasFileLoader.LasFile)
 
-	tools.LogOutput("> done processing", filepath.Base(filePath))
+	glog.Infoln("> done processing", filepath.Base(filePath))
 }
 
 func (tilerIndex *TilerIndex) readLasData(filePath string, opts *tiler.TilerOptions, tree *grid_tree.GridTree) (*lidario.LasFileLoader, error) {
 	// Reading files
-	tools.LogOutput("> reading data from las file...", filepath.Base(filePath))
+	glog.Infoln("> reading data from las file...", filepath.Base(filePath))
 	lasFileLoader, err := readLas(filePath, opts, tree)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return nil, err
 	}
 
@@ -102,39 +102,39 @@ func (tilerIndex *TilerIndex) readLasData(filePath string, opts *tiler.TilerOpti
 
 func (tilerIndex *TilerIndex) prepareDataStructure(octree *grid_tree.GridTree, opts *tiler.TilerOptions) {
 	// Build tree hierarchical structure
-	tools.LogOutput("> building data structure...")
+	glog.Infoln("> building data structure...")
 
 	if err := octree.Build(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	if opts.MaxNumPointsPerNode < 8*opts.MinNumPointsPerNode {
 		err := fmt.Errorf("MaxNumPoints shoud be greater than 8 * MinNumPoints")
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
-	log.Println("split-big-node for tree...")
+	glog.Infoln("split-big-node for tree...")
 	if err := octree.SplitBigNode(opts.MaxNumPointsPerNode); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
-	log.Println("split-big-node for tree finished")
+	glog.Infoln("split-big-node for tree finished")
 
-	log.Println("merge-small-node for tree...")
+	glog.Infoln("merge-small-node for tree...")
 	if err := octree.MergeSmallNode(opts.MinNumPointsPerNode); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
-	log.Println("merge-small-node for tree finished")
+	glog.Infoln("merge-small-node for tree finished")
 
 	rootNode := octree.GetRootNode()
-	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
+	glog.Infoln("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(rootNode.GetPoints()))
 
 }
 
 func (tilerIndex *TilerIndex) exportToCesiumTileset(octree *grid_tree.GridTree, opts *tiler.TilerOptions, subfolder string) {
-	tools.LogOutput("> exporting data...")
+	glog.Infoln("> exporting data...")
 	err := tilerIndex.exportTreeAsTileset(opts, octree, subfolder)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 }
 
@@ -197,7 +197,7 @@ func (tilerIndex *TilerIndex) exportTreeAsTileset(opts *tiler.TilerOptions, octr
 	// find if there are errors in the error channel buffer
 	withErrors := false
 	for err := range errorChannel {
-		log.Println(err)
+		glog.Infoln(err)
 		withErrors = true
 	}
 	if withErrors {
@@ -215,24 +215,24 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	// var lf *lidario.LasFile
 	// lf, err = lidario.NewLasFile(filePath, "r")
 	// if err != nil {
-	// 	log.Println(err)
-	// 	log.Fatal(err)
+	// 	glog.Infoln(err)
+	// 	glog.Fatal(err)
 	// }
 	// defer lf.Close()
 
 	newFileName := path.Join(parentFolder, "content.las")
 	if _, err := os.Stat(newFileName); err == nil {
 		if err := os.Remove(newFileName); err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	newLf, err := lidario.InitializeUsingFile(newFileName, lasFile)
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 	}
 	defer func() {
 		if newLf != nil {
@@ -242,8 +242,8 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	}()
 
 	if err := newLf.CopyHeaderXYZ(lasFile.Header); err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		glog.Infoln(err)
+		glog.Fatal(err)
 	}
 
 	progress := 0
@@ -253,22 +253,22 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	numberOfPoints := rootNode.NumberOfPoints()
 	points := rootNode.GetPoints()
 
-	log.Println("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(points))
+	glog.Infoln("las_file root_node num_of_points:", rootNode.NumberOfPoints(), ", points.len:", len(points))
 
 	for i := 0; i < int(numberOfPoints); i++ {
 		point := points[i]
 
 		pointLas, err := lasFile.LasPoint(point.PointExtend.LasPointIndex)
 		if err != nil {
-			log.Println(err)
-			log.Fatal(err)
+			glog.Infoln(err)
+			glog.Fatal(err)
 			return err
 		}
 
 		X, Y, Z := pointLas.PointData().X, pointLas.PointData().Y, pointLas.PointData().Z
 		if !lasFile.CheckPointXYZInvalid(X, Y, Z) {
-			log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
-			log.Fatal("invalid point X/Y/Z")
+			glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+			glog.Fatal("invalid point X/Y/Z")
 			continue
 		}
 
@@ -279,7 +279,7 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 		if progress != oldProgress {
 			oldProgress = progress
 			if progress%50 == 0 {
-				log.Printf("export root-node progress: %v\n", progress)
+				glog.Infof("export root-node progress: %v\n", progress)
 			}
 		}
 	}
@@ -287,14 +287,14 @@ func (tilerIndex *TilerIndex) exportRootNodeLas(octree *grid_tree.GridTree, opts
 	newLf.Close()
 	newLf = nil
 
-	log.Println("Write las file success.", newFileName)
+	glog.Infoln("Write las file success.", newFileName)
 
 	// // Check
-	// log.Printf("check las_file %s", newFileName)
+	// glog.Infof("check las_file %s", newFileName)
 	// mergedLf, err := lidario.NewLasFile(newFileName, "r")
 	// if err != nil {
-	// 	log.Println(err)
-	// 	log.Fatal(err)
+	// 	glog.Infoln(err)
+	// 	glog.Fatal(err)
 	// 	return err
 	// }
 	// defer mergedLf.Close()

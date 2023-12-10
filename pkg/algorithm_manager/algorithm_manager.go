@@ -1,8 +1,8 @@
 package algorithm_manager
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
 )
 
 type AlgorithmManager interface {

@@ -2,7 +2,7 @@ package unit_test
 
 import (
 	"flag"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/tools"
 	"os"
 	"strconv"
 	"testing"
@@ -10,7 +10,7 @@ import (
 
 func TestInputFlagIsParsed(t *testing.T) {
 	expected := "/home/user/file.las"
-	os.Args = []string{"gocesiumtiler", "-input=" + expected}
+	os.Args = []string{"cesium_tiler", "-input=" + expected}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Input != expected {
@@ -20,7 +20,7 @@ func TestInputFlagIsParsed(t *testing.T) {
 
 func TestIFlagIsParsed(t *testing.T) {
 	expected := "/home/user/file.las"
-	os.Args = []string{"gocesiumtiler", "-i=" + expected}
+	os.Args = []string{"cesium_tiler", "-i=" + expected}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Input != expected {
@@ -30,7 +30,7 @@ func TestIFlagIsParsed(t *testing.T) {
 
 func TestOutputFlagIsParsed(t *testing.T) {
 	expected := "/home/user/output"
-	os.Args = []string{"gocesiumtiler", "-output=" + expected}
+	os.Args = []string{"cesium_tiler", "-output=" + expected}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Output != expected {
@@ -40,7 +40,7 @@ func TestOutputFlagIsParsed(t *testing.T) {
 
 func TestOFlagIsParsed(t *testing.T) {
 	expected := "/home/user/output"
-	os.Args = []string{"gocesiumtiler", "-o=" + expected}
+	os.Args = []string{"cesium_tiler", "-o=" + expected}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Output != expected {
@@ -50,7 +50,7 @@ func TestOFlagIsParsed(t *testing.T) {
 
 func TestSridFlagIsParsed(t *testing.T) {
 	expected := 32633
-	os.Args = []string{"gocesiumtiler", "-srid=" + strconv.Itoa(expected)}
+	os.Args = []string{"cesium_tiler", "-srid=" + strconv.Itoa(expected)}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Srid != expected {
@@ -59,7 +59,7 @@ func TestSridFlagIsParsed(t *testing.T) {
 }
 func TestEFlagIsParsed(t *testing.T) {
 	expected := 32633
-	os.Args = []string{"gocesiumtiler", "-e=" + strconv.Itoa(expected)}
+	os.Args = []string{"cesium_tiler", "-e=" + strconv.Itoa(expected)}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Srid != expected {
@@ -69,7 +69,7 @@ func TestEFlagIsParsed(t *testing.T) {
 
 func TestSridFlagDefaultIs4326(t *testing.T) {
 	expected := 4326
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Srid != expected {
@@ -79,7 +79,7 @@ func TestSridFlagDefaultIs4326(t *testing.T) {
 
 func TestZOffsetFlagIsParsed(t *testing.T) {
 	expected := 10.0
-	os.Args = []string{"gocesiumtiler", "-zoffset=10"}
+	os.Args = []string{"cesium_tiler", "-zoffset=10"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.ZOffset != expected {
@@ -89,7 +89,7 @@ func TestZOffsetFlagIsParsed(t *testing.T) {
 
 func TestZFlagIsParsed(t *testing.T) {
 	expected := 10.0
-	os.Args = []string{"gocesiumtiler", "-z=10"}
+	os.Args = []string{"cesium_tiler", "-z=10"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.ZOffset != expected {
@@ -99,7 +99,7 @@ func TestZFlagIsParsed(t *testing.T) {
 
 func TestZOffsetFlagDefaultIsZero(t *testing.T) {
 	expected := 0.0
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.ZOffset != expected {
@@ -109,7 +109,7 @@ func TestZOffsetFlagDefaultIsZero(t *testing.T) {
 
 func TestMaxPtsFlagIsParsed(t *testing.T) {
 	expected := 2000
-	os.Args = []string{"gocesiumtiler", "-maxpts=2000"}
+	os.Args = []string{"cesium_tiler", "-maxpts=2000"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.MaxNumPoints != expected {
@@ -118,7 +118,7 @@ func TestMaxPtsFlagIsParsed(t *testing.T) {
 }
 func TestMFlagIsParsed(t *testing.T) {
 	expected := 2000
-	os.Args = []string{"gocesiumtiler", "-m=2000"}
+	os.Args = []string{"cesium_tiler", "-m=2000"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.MaxNumPoints != expected {
@@ -128,7 +128,7 @@ func TestMFlagIsParsed(t *testing.T) {
 
 func TestMaxPtsFlagDefaultIs50000(t *testing.T) {
 	expected := 50000
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.MaxNumPoints != expected {
@@ -138,7 +138,7 @@ func TestMaxPtsFlagDefaultIs50000(t *testing.T) {
 
 func TestGeoidFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-geoid"}
+	os.Args = []string{"cesium_tiler", "-geoid"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.ZGeoidCorrection {
@@ -148,7 +148,7 @@ func TestGeoidFlagIsParsed(t *testing.T) {
 
 func TestGFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-g"}
+	os.Args = []string{"cesium_tiler", "-g"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.ZGeoidCorrection {
@@ -158,7 +158,7 @@ func TestGFlagIsParsed(t *testing.T) {
 
 func TestGeoidFlagDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.ZGeoidCorrection {
@@ -168,7 +168,7 @@ func TestGeoidFlagDefaultIsFalse(t *testing.T) {
 
 func TestFolderProcessingFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-folder"}
+	os.Args = []string{"cesium_tiler", "-folder"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.FolderProcessing {
@@ -178,7 +178,7 @@ func TestFolderProcessingFlagIsParsed(t *testing.T) {
 
 func TestFFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-f"}
+	os.Args = []string{"cesium_tiler", "-f"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.FolderProcessing {
@@ -188,7 +188,7 @@ func TestFFlagIsParsed(t *testing.T) {
 
 func TestFolderProcessingDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.FolderProcessing {
@@ -198,7 +198,7 @@ func TestFolderProcessingDefaultIsFalse(t *testing.T) {
 
 func TestRecursiveFolderProcessingFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-recursive"}
+	os.Args = []string{"cesium_tiler", "-recursive"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.RecursiveFolderProcessing {
@@ -208,7 +208,7 @@ func TestRecursiveFolderProcessingFlagIsParsed(t *testing.T) {
 
 func TestRFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-r"}
+	os.Args = []string{"cesium_tiler", "-r"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.RecursiveFolderProcessing {
@@ -218,7 +218,7 @@ func TestRFlagIsParsed(t *testing.T) {
 
 func TestRecursiveFolderProcessingDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.RecursiveFolderProcessing {
@@ -228,7 +228,7 @@ func TestRecursiveFolderProcessingDefaultIsFalse(t *testing.T) {
 
 func TestSilentFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-silent"}
+	os.Args = []string{"cesium_tiler", "-silent"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.Silent {
@@ -238,7 +238,7 @@ func TestSilentFlagIsParsed(t *testing.T) {
 
 func TestSFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-silent"}
+	os.Args = []string{"cesium_tiler", "-silent"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.Silent {
@@ -248,7 +248,7 @@ func TestSFlagIsParsed(t *testing.T) {
 
 func TestSilentFlagDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Silent {
@@ -258,7 +258,7 @@ func TestSilentFlagDefaultIsFalse(t *testing.T) {
 
 func TestLogTimestampFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-timestamp"}
+	os.Args = []string{"cesium_tiler", "-timestamp"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.LogTimestamp {
@@ -268,7 +268,7 @@ func TestLogTimestampFlagIsParsed(t *testing.T) {
 
 func TestTFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-timestamp"}
+	os.Args = []string{"cesium_tiler", "-timestamp"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.LogTimestamp {
@@ -278,7 +278,7 @@ func TestTFlagIsParsed(t *testing.T) {
 
 func TestLogTimestampFlagDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.LogTimestamp {
@@ -288,7 +288,7 @@ func TestLogTimestampFlagDefaultIsFalse(t *testing.T) {
 
 func TestAlgorithmFlagIsParsed(t *testing.T) {
 	expected := "random"
-	os.Args = []string{"gocesiumtiler", "-algorithm=random"}
+	os.Args = []string{"cesium_tiler", "-algorithm=random"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Algorithm != expected {
@@ -298,7 +298,7 @@ func TestAlgorithmFlagIsParsed(t *testing.T) {
 
 func TestAlgorithmDefaultIsGrid(t *testing.T) {
 	expected := "grid"
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Algorithm != "grid" {
@@ -308,7 +308,7 @@ func TestAlgorithmDefaultIsGrid(t *testing.T) {
 
 func TestGridMaxSizeFlagIsParsed(t *testing.T) {
 	expected := 2.35
-	os.Args = []string{"gocesiumtiler", "-grid-max-size=2.35"}
+	os.Args = []string{"cesium_tiler", "-grid-max-size=2.35"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.GridCellMaxSize != expected {
@@ -318,7 +318,7 @@ func TestGridMaxSizeFlagIsParsed(t *testing.T) {
 
 func TestGridMaxSizeFlagDefaultIs5m(t *testing.T) {
 	expected := 5.0
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.GridCellMaxSize != expected {
@@ -328,7 +328,7 @@ func TestGridMaxSizeFlagDefaultIs5m(t *testing.T) {
 
 func TestGridMinSizeFlagIsParsed(t *testing.T) {
 	expected := 0.04
-	os.Args = []string{"gocesiumtiler", "-grid-min-size=0.04"}
+	os.Args = []string{"cesium_tiler", "-grid-min-size=0.04"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.GridCellMinSize != expected {
@@ -338,7 +338,7 @@ func TestGridMinSizeFlagIsParsed(t *testing.T) {
 
 func TestGridMinSizeFlagDefaultIs15cm(t *testing.T) {
 	expected := 0.15
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.GridCellMinSize != expected {
@@ -348,7 +348,7 @@ func TestGridMinSizeFlagDefaultIs15cm(t *testing.T) {
 
 func TestHelpFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-help"}
+	os.Args = []string{"cesium_tiler", "-help"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.Help {
@@ -358,7 +358,7 @@ func TestHelpFlagIsParsed(t *testing.T) {
 
 func TestHFlagIsParsed(t *testing.T) {
 	expected := true
-	os.Args = []string{"gocesiumtiler", "-h"}
+	os.Args = []string{"cesium_tiler", "-h"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if !*flags.Help {
@@ -368,7 +368,7 @@ func TestHFlagIsParsed(t *testing.T) {
 
 func TestHelpDefaultIsFalse(t *testing.T) {
 	expected := false
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.Help {
@@ -378,7 +378,7 @@ func TestHelpDefaultIsFalse(t *testing.T) {
 
 func TestRefineModeFlagIsParsed(t *testing.T) {
 	expected := "REPLACE"
-	os.Args = []string{"gocesiumtiler", "-refine-mode=" + expected}
+	os.Args = []string{"cesium_tiler", "-refine-mode=" + expected}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.RefineMode != expected {
@@ -388,7 +388,7 @@ func TestRefineModeFlagIsParsed(t *testing.T) {
 
 func TestRefineModeFlagDefaultIsAdd(t *testing.T) {
 	expected := "ADD"
-	os.Args = []string{"gocesiumtiler"}
+	os.Args = []string{"cesium_tiler"}
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags := tools.ParseFlags()
 	if *flags.RefineMode != expected {

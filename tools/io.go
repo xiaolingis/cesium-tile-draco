@@ -1,24 +1,25 @@
 package tools
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 func OpenFileOrFail(filePath string) *os.File {
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return file
 }
 
 func GetRootFolder() string {
-	assetsFromEnv := os.Getenv("GOCESIUMTILER_WORKDIR")
+	assetsFromEnv := os.Getenv("CESIUM_TILER_WORKDIR")
 	if assetsFromEnv != "" {
 		return assetsFromEnv
 	} else if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
@@ -27,7 +28,7 @@ func GetRootFolder() string {
 	} else {
 		ex, err := os.Executable()
 		if err != nil {
-			log.Fatal("cannot retrieve executable directory", err)
+			glog.Fatal("cannot retrieve executable directory", err)
 		}
 		return filepath.Dir(ex)
 	}

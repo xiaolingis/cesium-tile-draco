@@ -1,7 +1,7 @@
 package geoid_offset
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
 	"math"
 	"sync"
 )

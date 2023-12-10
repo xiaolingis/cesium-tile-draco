@@ -1,7 +1,7 @@
 package pipeline_elevation_corrector
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
 )
 
 type PipelineElevationCorrector struct {

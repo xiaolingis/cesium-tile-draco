@@ -1,8 +1,8 @@
 package unit
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/coordinate/proj4_coordinate_converter"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/coordinate/proj4_coordinate_converter"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
 	"math"
 	"testing"
 )

@@ -8,14 +8,14 @@ package lidario
 import (
 	"encoding/binary"
 	"io"
-	"log"
 	"os"
 	"runtime"
 	"sync"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/golang/glog"
 )
 
 var recLengths = [11][4]int{
@@ -103,7 +103,7 @@ func (lasFileLoader *LasFileLoader) LoadLasFile(fileName string, inSrid int, eig
 
 // Reads the las file and produces a LasFile struct instance loading points data into its inner list of Point
 func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool, las *LasFile) error {
-	log.Println("las_file path:", las.fileName)
+	glog.Infoln("las_file path:", las.fileName)
 
 	var err error
 	if las.f, err = os.Open(las.fileName); err != nil {
@@ -119,8 +119,8 @@ func (lasFileLoader *LasFileLoader) readForOctree(inSrid int, eightBitColor bool
 	}
 
 	lasFileLoader.LasFile = las
-	log.Printf("las_file [%s] open success. num_of_points:%d", las.fileName, las.Header.NumberPoints)
-	// log.Println("las_file header", las.Header.String())
+	glog.Infof("las_file [%s] open success. num_of_points:%d", las.fileName, las.Header.NumberPoints)
+	// glog.Infoln("las_file header", las.Header.String())
 
 	if las.fileMode != "rh" {
 
@@ -166,7 +166,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	pointsLength := las.Header.NumberPoints * las.Header.PointRecordLength
 	b := make([]byte, pointsLength)
 	if _, err := las.f.ReadAt(b, int64(las.Header.OffsetToPoints)); err != nil && err != io.EOF {
-		log.Fatal(err)
+		glog.Fatal(err)
 		return err
 	}
 
@@ -181,7 +181,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 	// imported and used in this project.
 
 	numCPUs := runtime.NumCPU()
-	log.Printf("parallel read numCPUs:[%d] lasFilePath:[%s]", numCPUs, lasFileLoader.LasFile.fileName)
+	glog.Infof("parallel read numCPUs:[%d] lasFilePath:[%s]", numCPUs, lasFileLoader.LasFile.fileName)
 
 	var wg sync.WaitGroup
 	blockSize := las.Header.NumberPoints / numCPUs
@@ -200,7 +200,7 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 		wg.Add(1)
 		go func(pointSt, pointEnd int, threadNum int) {
 			defer wg.Done()
-			log.Printf("cpu-thread read %d/%d  pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
+			glog.Infof("cpu-thread read %d/%d  pointsNum:[%d] pointSt:[%d] pointEnd:[%d] NumberPoints:[%d]",
 				threadNum, numCPUs, pointEnd-pointSt+1, pointSt, pointEnd, las.Header.NumberPoints)
 
 			var offset int
@@ -209,16 +209,16 @@ func (lasFileLoader *LasFileLoader) readPointsOctElem(inSrid int, eightBitColor 
 				offset = i * las.Header.PointRecordLength
 				X, Y, Z, R, G, B, Intensity, Classification := readPoint(&las.Header, b, offset, eightBitColor)
 				if !las.CheckPointXYZInvalid(X, Y, Z) {
-					log.Printf(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
-					log.Fatal("invalid point X/Y/Z")
+					glog.Infof(" nonono invalid point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+					glog.Fatal("invalid point X/Y/Z")
 					continue
 				}
 				pointExtend := &data.PointExtend{
 					LasPointIndex: i,
 				}
 
-				// log.Printf(" oooooo point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
-				// log.Println(" oooooo las_file_reader point", X, Y, Z, R, G, B, Intensity, Classification)
+				// glog.Infof(" oooooo point_pos:[%d] X:[%f] Y:[%f] Z:[%f]", i, X, Y, Z)
+				// glog.Infoln(" oooooo las_file_reader point", X, Y, Z, R, G, B, Intensity, Classification)
 				lasFileLoader.Tree.AddPoint(
 					&geometry.Coordinate{X: X, Y: Y, Z: Z},
 					R, G, B,

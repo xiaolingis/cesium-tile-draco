@@ -3,15 +3,15 @@ package proj4_coordinate_converter
 import (
 	"bufio"
 	"errors"
-	"log"
 	"math"
 	"path"
 	"strconv"
 	"strings"
 
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/geometry"
-	"github.com/mfbonfigli/gocesiumtiler/tools"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/geometry"
+	"github.com/ecopia-map/cesium_tiler/tools"
+	"github.com/golang/glog"
 	proj "github.com/xeonx/proj4"
 )
 
@@ -51,7 +51,7 @@ func loadEPSGProjectionDatabase(databasePath string) *map[int]*epsgProjection {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 
 	return &epsgDatabase
@@ -61,7 +61,7 @@ func parseEPSGProjectionDatabaseRecord(databaseRecord string) (int, *epsgProject
 	tokens := strings.Split(databaseRecord, "\t")
 	code, err := strconv.Atoi(strings.Replace(tokens[0], "EPSG:", "", -1))
 	if err != nil {
-		log.Fatal("error while parsing the epsg projection file", err)
+		glog.Fatal("error while parsing the epsg projection file", err)
 	}
 	desc := tokens[1]
 	proj4 := tokens[2]
@@ -81,13 +81,13 @@ func (cc *proj4CoordinateConverter) ConvertCoordinateSrid(sourceSrid int, target
 
 	src, err := cc.initProjection(sourceSrid)
 	if err != nil {
-		log.Println(err)
+		glog.Infoln(err)
 		return coord, err
 	}
 
 	dst, err := cc.initProjection(targetSrid)
 	if err != nil {
-		log.Println(err)
+		glog.Infoln(err)
 		return coord, err
 	}
 
@@ -112,12 +112,12 @@ func (cc *proj4CoordinateConverter) Convert2DBoundingboxToWGS84Region(bbox *geom
 	}
 	w84lc, err := cc.ConvertCoordinateSrid(srid, 4326, projLowCorn)
 	if err != nil {
-		log.Println(err)
+		glog.Infoln(err)
 		return nil, nil
 	}
 	w84uc, err := cc.ConvertCoordinateSrid(srid, 4326, projUppCorn)
 	if err != nil {
-		log.Println(err)
+		glog.Infoln(err)
 		return nil, nil
 	}
 
@@ -132,7 +132,7 @@ func (cc *proj4CoordinateConverter) ConvertToWGS84Cartesian(coord geometry.Coord
 
 	res, err := cc.ConvertCoordinateSrid(sourceSrid, 4326, coord)
 	if err != nil {
-		log.Println(err)
+		glog.Infoln(err)
 		return coord, err
 	}
 	res2, err := cc.ConvertCoordinateSrid(4329, 4978, res)

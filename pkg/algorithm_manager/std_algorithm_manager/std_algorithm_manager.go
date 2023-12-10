@@ -1,17 +1,16 @@
 package std_algorithm_manager
 
 import (
-	"log"
-
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/coordinate/proj4_coordinate_converter"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/geoid_elevation_corrector"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/offset_elevation_corrector"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/elevation/pipeline_elevation_corrector"
-	"github.com/mfbonfigli/gocesiumtiler/internal/converters/geoid_offset/gh_offset_calculator"
-	"github.com/mfbonfigli/gocesiumtiler/internal/octree/grid_tree"
-	"github.com/mfbonfigli/gocesiumtiler/internal/tiler"
-	"github.com/mfbonfigli/gocesiumtiler/pkg/algorithm_manager"
+	"github.com/ecopia-map/cesium_tiler/internal/converters"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/coordinate/proj4_coordinate_converter"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/geoid_elevation_corrector"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/offset_elevation_corrector"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/elevation/pipeline_elevation_corrector"
+	"github.com/ecopia-map/cesium_tiler/internal/converters/geoid_offset/gh_offset_calculator"
+	"github.com/ecopia-map/cesium_tiler/internal/octree/grid_tree"
+	"github.com/ecopia-map/cesium_tiler/internal/tiler"
+	"github.com/ecopia-map/cesium_tiler/pkg/algorithm_manager"
+	"github.com/golang/glog"
 )
 
 type StandardAlgorithmManager struct {
@@ -79,6 +78,6 @@ func evaluateTreeAlgorithm(
 		// 	return random_trees.NewRandomTree(options, converter, elevationCorrection)
 	}
 
-	log.Fatal("Unrecognized strategy")
+	glog.Fatal("Unrecognized strategy")
 	return nil
 }

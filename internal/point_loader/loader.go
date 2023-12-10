@@ -1,7 +1,7 @@
 package point_loader
 
 import (
-	"github.com/mfbonfigli/gocesiumtiler/internal/data"
+	"github.com/ecopia-map/cesium_tiler/internal/data"
 )
 
 // A Tree contains methods to store and properly shuffle points for subsequent retrieval in the generation of the
