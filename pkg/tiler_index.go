@@ -184,7 +184,7 @@ func (tilerIndex *TilerIndex) exportTreeAsTileset(opts *tiler.TilerOptions, octr
 	// add consumers to waitgroup and launch them
 	for i := 0; i < numConsumers; i++ {
 		waitGroup.Add(1)
-		consumer := io.NewStandardConsumer(tilerIndex.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco)
+		consumer := io.NewStandardConsumer(tilerIndex.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco, opts.DracoEncoderPath)
 		go consumer.Consume(workChannel, errorChannel, &waitGroup)
 	}
 

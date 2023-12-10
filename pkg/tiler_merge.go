@@ -607,7 +607,7 @@ func (tilerMerge *TilerMerge) exportRootNodeTileset(opts *tiler.TilerOptions, tr
 	// add consumers to waitgroup and launch them
 	for i := 0; i < numConsumers; i++ {
 		waitGroup.Add(1)
-		consumer := io.NewStandardConsumer(tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco)
+		consumer := io.NewStandardConsumer(tilerMerge.algorithmManager.GetCoordinateConverterAlgorithm(), opts.RefineMode, opts.Draco, opts.DracoEncoderPath)
 		go consumer.Consume(workChannel, errorChannel, &waitGroup)
 	}
 

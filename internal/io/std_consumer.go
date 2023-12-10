@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/mfbonfigli/gocesiumtiler/internal/converters"
 	"github.com/mfbonfigli/gocesiumtiler/internal/data"
@@ -29,13 +28,15 @@ type StandardConsumer struct {
 	coordinateConverter converters.CoordinateConverter
 	refineMode          tiler.RefineMode
 	draco               bool
+	dracoEncoderPath    string
 }
 
-func NewStandardConsumer(coordinateConverter converters.CoordinateConverter, refineMode tiler.RefineMode, draco bool) *StandardConsumer {
+func NewStandardConsumer(coordinateConverter converters.CoordinateConverter, refineMode tiler.RefineMode, draco bool, dracoEncoderPath string) *StandardConsumer {
 	return &StandardConsumer{
 		coordinateConverter: coordinateConverter,
 		refineMode:          refineMode,
 		draco:               draco,
+		dracoEncoderPath:    dracoEncoderPath,
 	}
 }
 
@@ -103,17 +104,17 @@ func (c *StandardConsumer) doWork(workUnit *WorkUnit) error {
 func (c *StandardConsumer) invokeDracoEncoder(
 	programLocation, plyInputFileLocation, outputFileLocation string, compressionLevel int,
 ) error {
-	startTime := time.Now()
+	//startTime := time.Now()
 	cmdParams := []string{
 		"-point_cloud",
 		"-i", plyInputFileLocation,
 		"-o", outputFileLocation,
-		"-qp", strconv.Itoa(0),
+		"-qp", strconv.Itoa(11),
 		"-cl", strconv.Itoa(compressionLevel),
 	}
 
 	runCmd := exec.Command(programLocation, cmdParams...)
-	log.Println("start run draco_encoder cmd", runCmd.String())
+	//log.Println("start run draco_encoder cmd", runCmd.String())
 
 	var cmdStdout, cmdStderr bytes.Buffer
 	runCmd.Stdout = &cmdStdout
@@ -123,7 +124,7 @@ func (c *StandardConsumer) invokeDracoEncoder(
 		log.Println("run failed", runCmd.String(), "cmd-stdout", cmdStdout.String(), "cmd-stderr", cmdStderr.String(), err.Error())
 		return err
 	}
-	log.Println("run draco_encoder cmd success", runCmd.String(), "latency_ms", time.Since(startTime).Milliseconds())
+	//log.Println("run draco_encoder cmd success", runCmd.String(), "latency_ms", time.Since(startTime).Milliseconds())
 	return nil
 }
 
@@ -157,11 +158,12 @@ func (c *StandardConsumer) writeBinaryPntsFileWithDraco(workUnit WorkUnit) error
 	}
 
 	// generate Draco Encoder binary
-	programLocation := "/workerdir/gocesiumtiler/draco_encoder"
+	//programLocation := "/workerdir/gocesiumtiler/draco_encoder"
+	programLocation := c.dracoEncoderPath
 	plyInputFileLocation := path.Join(parentFolder, plyFileName)
 	outputFileName := "content.drc"
 	drcFilePath := path.Join(parentFolder, outputFileName)
-	compressionLevel := 10
+	compressionLevel := 7
 	if err := c.invokeDracoEncoder(programLocation, plyInputFileLocation, drcFilePath, compressionLevel); err != nil {
 		log.Println("invokeDracoEncoder failed.", err.Error())
 		return err
@@ -171,7 +173,7 @@ func (c *StandardConsumer) writeBinaryPntsFileWithDraco(workUnit WorkUnit) error
 	if err != nil {
 		fmt.Printf("file error:%s\n", err.Error())
 	}
-	fmt.Println("ReadFile success")
+	//fmt.Println("ReadFile success")
 
 	// Feature table
 	featureTableStr := c.generateFeatureTableJsonContentWithDraco(
@@ -180,7 +182,7 @@ func (c *StandardConsumer) writeBinaryPntsFileWithDraco(workUnit WorkUnit) error
 	featureTableLen := len(featureTableStr)
 	outputByte := c.generatePntsByteArrayWithDraco([]byte(featureTableStr), featureTableLen, []byte{}, 0, dracoContent, len(dracoContent))
 
-	fmt.Println("generate from generatePntsByteArrayWithDraco")
+	//fmt.Println("generate from generatePntsByteArrayWithDraco")
 
 	// Write binary content to file
 	pntsFilePath := path.Join(parentFolder, "content.pnts")

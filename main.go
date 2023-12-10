@@ -125,6 +125,7 @@ func mainCommandIndex(args []string) {
 		CellMaxSize:            *tilerFlags.GridCellMaxSize,
 		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
 		Draco:                  *tilerFlags.Draco,
+		DracoEncoderPath:       *tilerFlags.DracoEncoderPath,
 
 		Command: tools.CommandIndex,
 		TilerIndexOptions: &tiler.TilerIndexOptions{
@@ -167,6 +168,10 @@ func validateOptionsForCommandIndex(opts *tiler.TilerOptions, flags *tools.Flags
 		return "refine-mode should be either ADD or REPLACE", false
 	}
 
+	if opts.Draco && opts.DracoEncoderPath == "" {
+		return "draco-encoder-path must be set", false
+	}
+
 	return "", true
 }
 
@@ -194,6 +199,8 @@ func mainCommandMerge(args []string, cmd string) {
 		CellMaxSize:            *tilerFlags.GridCellMaxSize,
 		RefineMode:             tiler.ParseRefineMode(*tilerFlags.RefineMode),
 		Draco:                  *tilerFlags.Draco,
+		DracoEncoderPath:       *tilerFlags.DracoEncoderPath,
+
 		TilerMergeOptions: &tiler.TilerMergeOptions{
 			Output: "",
 		},

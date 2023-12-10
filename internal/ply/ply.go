@@ -1,10 +1,9 @@
 package ply
 
 import (
-	"log"
 	"unsafe"
 
-	plyfile "github.com/alexbaden/go-plyfile"
+	plyfile "github.com/cobaltgray/go-plyfile"
 )
 
 type Vertex struct {
@@ -33,7 +32,7 @@ func WritePlyFile(filePath string, verts []Vertex) error {
 
 	var version float32
 
-	log.Printf("Writing PLY file 'test.ply'...")
+	//log.Printf("Writing PLY file 'test.ply'...")
 
 	cplyfile := plyfile.PlyOpenForWriting(filePath, len(elem_names), elem_names, plyfile.PLY_ASCII, &version)
 	vertProps, _ := SetPlyProperties()
@@ -62,6 +61,6 @@ func WritePlyFile(filePath string, verts []Vertex) error {
 	// close the PLY file
 	plyfile.PlyClose(cplyfile)
 
-	log.Printf("Wrote PLY file.")
+	//log.Printf("Wrote PLY file.")
 	return nil
 }
