@@ -1,3 +1,5 @@
+github.com/cobaltgray/go-plyfile v0.0.0-20210513130740-b21b0efca069 h1:+A7ZW/sY9IG/WvTrQPqieYuN58FgPdB7lXntFROJiow=
+github.com/cobaltgray/go-plyfile v0.0.0-20210513130740-b21b0efca069/go.mod h1:/5trcn3Txufe7tdySHb4A+1mqItn6WRprwfnjTia8ZA=
 github.com/golang/glog v1.1.0 h1:/d3pCKDPWNnvIWe0vVUpNP32qc8U3PDVxySP/y360qE=
 github.com/golang/glog v1.1.0/go.mod h1:pfYeQZ3JWZoXTV5sFc986z3HTpwQs9At6P4ImfuP3NQ=
 github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5gKV8=
